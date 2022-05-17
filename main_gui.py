@@ -1,12 +1,21 @@
 from gomoku import Game
+from gui import GUIHandler
+from players import AIPlayer, HumanPlayer
 import pygame
 
 if __name__ == "__main__":
-    g = Game(size=15)
-    g.init_pygame()
-    g.clear_screen()
-    g.draw()
+    ai = AIPlayer()
+    human  = HumanPlayer()
+    game = Game(size=15, whitePlayer=ai, blackPlayer=human)    
+    gui = GUIHandler(game, [human])
+    game.gui = gui
+
+    game.swap2_init()
+
+    gui.init_pygame()
+    gui.clear_screen()
+    gui.draw()
 
     while True:
-        g.update()
+        gui.update()
         pygame.time.wait(100)

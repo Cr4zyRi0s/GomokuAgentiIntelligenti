@@ -1,9 +1,12 @@
+from boardstate import BoardState
 from gomoku import no_moves_possible, check_winning_condition, check_line
+from boardstate import BoardState
+
 import math
 import numpy as np
 
 
-def minimax(state : tuple, depth, maximize, alpha = -math.inf, beta = math.inf) -> float:
+def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.inf) -> float:
     if depth == 0 or gomoku_game_over(state):
         return gomoku_state_static_eval(state)
     if maximize:
@@ -25,10 +28,9 @@ def minimax(state : tuple, depth, maximize, alpha = -math.inf, beta = math.inf) 
                 break
         return minEval
     
-def gomoku_game_over(state) -> bool:
-    board,last_move,is_black = state
+def gomoku_game_over(state : BoardState, last_move : tuple, is_black : bool) -> bool:    
     color = "black" if is_black else "white"
-    return check_winning_condition(board, last_move, color) or no_moves_possible(board)
+    return check_winning_condition(state.grid, last_move, color) or no_moves_possible(state.grid)
 
 def gomoku_get_state_children(state : tuple) -> list:
     board,_,is_black= state

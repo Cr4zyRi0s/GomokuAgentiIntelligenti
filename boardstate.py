@@ -18,9 +18,8 @@ FORCING_THREATS = {
     3 : []
 }
 
-NON_FORCING_THREATS = [
+NON_FORCING_THREATS = {}
 
-]
 
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]
@@ -49,10 +48,39 @@ def rot135(mat : np.array):
         ctr += 1
     return new_mat
 
+def generic_to_white_threat(generic_threats : dict) -> dict:
+    return { k:
+    [pattern.replace('X','2').replace('Y','1') for pattern in v]
+    for k,v in generic_threats.items()}
+
+def generic_to_black_threat(generic_threats : dict) -> dict:
+    return { k:
+    [pattern.replace('X','1').replace('Y','2') for pattern in v]
+    for k,v in generic_threats.items()}
+
+
 class Threat:
-    def __init__(self, cells):
+    def __init__(self, cells: list, pattern : str, level : int):
         self.cells = cells
-        
+        self.pattern = pattern
+        self.level = level
+
+    def get_counter_move(self):
+        pass
+
+    def get_next_level_threats(self) -> dict:
+        pass
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other,Threat):
+            return False        
+        #Check
+        if self.pattern == other.pattern \
+            and self.cells[0] == other.cells[0] \
+            and self.cells[-1] == other.cells[-1]:
+            return True
+        return False
+
 class BoardState:
     def __init__(self,size = 15):
         self.size = size    
@@ -62,26 +90,27 @@ class BoardState:
         board[1:self.size + 1,1:self.size + 1] = 0
         board_45 = rot45(board)
         board_45 = board_45[2:2 * self.size + 1,:]
-
         board_135 = rot135(board)
         board_135 = board_135[2:2 * self.size + 1,:]
         board = board[1:self.size+1,:]
 
+        self.grid = board[1:self.size+1, 1:self.size+1]
         self.board = ''.join([str(el) for el in board.flatten()])
         self.board_45 = ''.join([str(el) for el in board_45.flatten()])
         self.board_90 = ''.join([str(el) for el in board.flatten()])
         self.board_135 = ''.join([str(el) for el in board_135.flatten()])
 
-        self.w_forcing_threats = { k:
-            [pattern.replace('X','2').replace('Y','1') for pattern in v]
-            for k,v in FORCING_THREATS.items()}
-        self.b_forcing_threats = { k:
-            [pattern.replace('X','1').replace('Y','2') for pattern in v]
-             for k,v in FORCING_THREATS.items()}
-        
-        self.w_threats = {5 : [], 4 : [], 3 : [], 2 : [], 1 : []}
-        self.b_threats = {5 : [], 4 : [], 3 : [], 2 : [], 1 : []}
+        self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
+        self.b_winning_threats = generic_to_white_threat(WINNING_THREAT)
 
+        self.w_forcing_threats = generic_to_white_threat(FORCING_THREATS)
+        self.b_forcing_threats = generic_to_black_threat(FORCING_THREATS)    
+        
+        self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
+        self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   
+        
+        self.w_threats = {5 : set(), 4 : set(), 3 : set(), 2 : set(), 1 : set()}
+        self.b_threats = {5 : set(), 4 : set(), 3 : set(), 2 : set(), 1 : set()}
     
     def make_move(self,move,is_black):
         stone = '1' if is_black else '2' 
@@ -92,26 +121,33 @@ class BoardState:
         c,r,_ = self.moves.pop()
         self._update_boards((c,r), '0')
 
-    def get_threats(self):
-        for level,bpatts in self.b_forcing_threats.items():
-            for bpatt in bpatts:
-                for match in re.finditer(bpatt, self.board):
+    def get_current_threats(self, last_move : tuple, black : bool) -> tuple:         
+        win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
+        force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
+        nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
+        return win_threats, force_threats, nforce_threats
+
+    def _get_threats(self, threat_patterns: dict):
+        threats = {}
+        for level,patts in threat_patterns:
+            for patt in patts:
+                for match in re.find_iter(patt, self.board):
                     span = match.span()
                     cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
-                    self.b_threats[level].append(cells)
-                for match in re.finditer(bpatt, self.board_90):
-                    pass
-                for match in re.finditer(bpatt, self.board_45):
-                    pass
-                for match in re.finditer(bpatt, self.board_135):
-                    pass
-        '''
-        for wpatt in self.w_forcing_threats:
-            re.finditer(wpatt, self.board)
-            re.finditer(wpatt, self.board_90)
-            re.finditer(wpatt, self.board_45)
-            re.finditer(wpatt, self.board_135)
-        '''
+                    threats[level].append(Threat(cells, patt, level))
+                for match in re.finditer(patt,self.board_90):
+                    span = match.span()
+                    cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
+                    threats[level].append(Threat(cells, patt, level))
+                for match in re.finditer(patt,self.board_45):
+                    span = match.span()
+                    cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
+                    threats[level].append(Threat(cells, patt, level))
+                for match in re.finditer(patt,self.self.board_135):
+                    span = match.span()
+                    cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
+                    threats[level].append(Threat(cells, patt, level))
+        return threats
 
     def print_boards(self):
         b = np.array([list(self.board[i : i + self.size + 2]) for i in range(0,(self.size + 2) * self.size, self.size + 2)])
@@ -122,6 +158,9 @@ class BoardState:
         print(b)
         b = np.array([list(self.board_135[i : i + self.size + 2]) for i in range(0,(self.size + 2) * (2 * self.size - 1), self.size + 2)])
         print(b)
+
+    def deepcopy(self):
+        pass
 
     def _cr_to_index(self,c,r) -> int:
         return r * (self.size + 2) + c + 1
@@ -167,9 +206,7 @@ if __name__ == '__main__':
 
     for m in moves:
         state.make_move(m,True)
-
-    state.get_threats()
-    print(state.b_threats)
+    
 
     '''
     test = [state._index_to_cr(state._cr_to_index(*m)) for m in moves]

@@ -1,8 +1,62 @@
+from operator import xor
 from tkinter.tix import DirTree
 import numpy as np
 
 
-def is_valid_move(col, row, board):
+
+
+def check_line(board, last_move, last_player, direction):
+    c,r = last_move
+    r1 = r
+    c1 = c
+    stone = 1 if last_player == "black" else 2
+    count = 1
+    while board[c1,r1] == stone:
+        r1 -= direction[0]
+        c1 -= direction[1]
+
+        if r1 < 0 or r1 >= board.shape[1]:
+            break
+        if c1 < 0 or c1 >= board.shape[0]:
+            break    
+        
+        if board[c1,r1] == stone:            
+            count += 1
+
+    r1 = r
+    c1 = c
+    while board[c1,r1] == stone:
+        r1 += direction[0]
+        c1 += direction[1]
+
+        if r1 < 0 or r1 >= board.shape[1]:
+            break
+        if c1 < 0 or c1 >= board.shape[0]:
+            break    
+
+        if board[c1,r1] == stone:
+            count += 1
+    
+    return count
+
+def check_winning_condition(board, last_move, last_player):
+    count_hor = check_line(board, last_move,last_player, (0,1))
+    count_ver = check_line(board, last_move,last_player, (1,0))
+    count_diag = check_line(board, last_move,last_player, (1,1))
+    count_diag1 = check_line(board, last_move,last_player, (-1,1))
+
+    #print(count_hor, count_ver, count_diag, count_diag1)
+
+    if count_hor == 5 or count_ver == 5 or count_diag == 5 or count_diag1 == 5:
+        return True
+    
+    return False
+
+def no_moves_possible(board : np.array) -> bool:
+    n_avail = np.count_nonzero(board)
+    return n_avail > 0
+
+def is_valid_move(col : int, row : int, board : np.array) -> bool:
     """Check if placing a stone at (col, row) is valid on board
     Args:
         col (int): column number
@@ -50,13 +104,16 @@ class Game:
     def swap2_init(self):
         self.blackPlayer.swap2_first_place_stones()
 
-    def swap2_first_placement(self, black_positions : list, white_positions : list):       
-        for bpos in black_positions:
-            if not self.place_stone(bpos, True):
-                return     
-        for wpos in white_positions:
-            if not self.place_stone(wpos, False):
-                return 
+    def swap2_first_placement(self, black_positions : list = [], white_positions : list = []):
+        n_stones = len(white_positions) + len(black_positions)
+        if n_stones  != 3:
+            raise Exception("Incorrect number of stones in first placement. Expected 3 got %d" % (n_stones))
+
+        if not self.place_stones(black_positions,True):
+            return
+        if not self.place_stones(white_positions,False):
+            return
+
         self.swap2_state["first_placement"] = False
         self.swap2_state["accept_or_place"] = True
         self.gui.draw()
@@ -65,15 +122,21 @@ class Game:
     def swap2_accept_or_place(self, player, choice):
         if choice == "white" or choice == "black":            
             self.swap2_select_color(player,choice)
+            self.swap2_state["accept_or_place"] = False
         else:          
             self.swap2_state["accept_or_place"] = False
             self.swap2_state["second_placement"] = True
             self.gui.draw()
             player.swap2_second_place_stones()
         
-    def swap2_second_placement(self, black_position : tuple, white_position: tuple):
-        self.place_stone(black_position, True)
-        self.place_stone(white_position, False)        
+    def swap2_second_placement(self, black_positions : list = None, white_positions: list = None):
+        n_stones = len(white_positions) + len(black_positions)
+        if n_stones  != 2:
+            raise Exception("Incorrect number of stones in first placement. Expected 2 got %d" % (n_stones))
+        if not self.place_stones(black_positions,True):
+            return
+        if not self.place_stones(white_positions,False):
+            return
         self.swap2_state["second_placement"] = False
         self.swap2_state["select_color"] = True
         self.gui.draw()
@@ -93,11 +156,11 @@ class Game:
         self.gui.draw()
 
     def swap2_end(self):
-        self.black_turn = False
-        self.swap2_phase = False
+        self.new_turn()
+        self.swap2_phase = False        
         self.gui.draw()
         
-    def place_stone(self,move,black):
+    def place_stone(self,move,black) -> bool:
         c,r = move        
         if not is_valid_move(c, r, self.board):            
             return False
@@ -107,111 +170,41 @@ class Game:
             self.gui.draw()
         return True
 
-    '''
-    def handle_click(self):
+    def place_stones(self, positions, black) -> bool:
+        for pos in positions:
+            if not is_valid_move(pos[0], pos[1], self.board):
+                return False
+  
+        for pos in positions:
+            self.board[pos[0], pos[1]] = 1 if black else 2
+        
+        if self.gui is not None:
+            self.gui.draw()
+        return True
+
+    def turn(self, player, move) -> bool:
         if self.winning_player is not None:
-            return        
+            return False
 
-        if self.swap2_phase:
-            self.swap2((col,row))
-
-        if not self.place_stone((col,row)):
-           return
-
-        # get stone groups for black and white
-        self_color = "black" if self.black_turn else "white"
-        
-        if self.check_winning_condition((row,col),self_color):
-            print("%s player won." % (self_color))
-            self.winning_player = self_color
-
-        # change turns and draw screen
-        self.CLICK.play()                
-        self.black_turn = not self.black_turn
-        self.draw()
-    '''       
-    '''
-
-''' 
-
-    def check_winning_condition(self, last_move, last_player):
-        count_hor = self.check_line(last_move,last_player, (0,1))
-        count_ver = self.check_line(last_move,last_player, (1,0))
-        count_diag = self.check_line(last_move,last_player, (1,1))
-        count_diag1 = self.check_line(last_move,last_player, (-1,1))
-
-        if count_hor == 5 or count_ver == 5 or count_diag == 5 or count_diag1 == 5:
+        player_black = player == self.blackPlayer
+        if xor(player_black, self.black_turn):
+            return False
+        if self.place_stone(move,self.black_turn):
+            if self.check_winning_condition(move, player.color):
+                self.winning_player = player.color
+                if self.gui is not None:
+                    self.gui.draw()
+                return True
+            self.new_turn()
             return True
-        
         return False
 
+    def new_turn(self):
+        self.black_turn = not self.black_turn      
+        '''  
+        if self.black_turn:
+            self.blackPlayer.play_turn()
+        else:
+            self.whitePlayer.play_turn()
+        '''
     
-    def check_line(self, last_move, last_player, direction):
-        r,c = last_move
-        r1 = r
-        c1 = c
-        stone = 1 if last_player == "black" else 2
-        count = 1
-        while self.board[c1,r1] == stone:
-            r1 -= direction[0]
-            c1 -= direction[1]
-
-            if r1 < 0 or r1 >= self.board.shape[1]:
-                break
-            if c1 < 0 or c1 >= self.board.shape[0]:
-                break    
-            
-            if self.board[c1,r1] == stone:            
-                count += 1
-
-        r1 = r
-        c1 = c
-        while self.board[c1,r1] == stone:
-            r1 += direction[0]
-            c1 += direction[1]
-
-            if r1 < 0 or r1 >= self.board.shape[1]:
-                break
-            if c1 < 0 or c1 >= self.board.shape[0]:
-                break    
-
-            if self.board[c1,r1] == stone:
-                count += 1
-        
-        return count
-    
-   
-
-
-        '''
-        if "bs_placed2" not in self.swap2_state.keys():
-            self.swap2_state["bs_placed2"] = 0
-        if "ws_placed2" not in self.swap2_state.keys():
-            self.swap2_state["ws_placed2"] = 0    
-
-        if self.swap2_state["ws_placed2"] < 1:
-            if self.place_stone(move,black = True):        
-                self.swap2_state["ws_placed2"] += 1
-        elif self.swap2_state["bs_placed2"] < 1:
-            if self.place_stone(move,black = False):
-                self.swap2_state["bs_placed2"] += 1
-                self.swap2_end()   
-        '''
-
-
-        '''        
-        c,r = move        
-
-        if "bs_placed1" not in self.swap2_state.keys():
-            self.swap2_state["bs_placed1"] = 0
-        if "ws_placed1" not in self.swap2_state.keys():
-            self.swap2_state["ws_placed1"] = 0        
-
-        if self.swap2_state["bs_placed1"] < 2:
-            if self.place_stone(move,black = True):        
-                self.swap2_state["bs_placed1"] += 1
-        elif self.swap2_state["ws_placed1"] < 1:
-            if self.place_stone(move,black = False):
-                self.swap2_state["ws_placed1"] += 1   
-                self.swap2_state["first_done"] = True 
-        '''

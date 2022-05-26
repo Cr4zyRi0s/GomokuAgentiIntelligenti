@@ -126,7 +126,7 @@ class GUIHandler:
 
         # text for score and turn info    
         if self.game.winning_player is not None:
-            win_msg = "%s won." % (self.winning_player) 
+            win_msg = "%s won." % (self.game.winning_player) 
             txt = self.font.render(win_msg, True, BLACK)
             self.screen.blit(txt, WIN_POS)
         else:         
@@ -135,22 +135,37 @@ class GUIHandler:
                     swap2_msg = "Black player can place 2 black stones and 1 white stone"
                 if self.game.swap2_state["accept_or_place"]:
                     swap2_msg = "White player is deciding his color or to place more stones"
+                    if isinstance(self.game.blackPlayer, HumanPlayer):
+                        w_button = Button(
+                        label = "White",
+                        pos = (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
+                        font = 30,
+                        bg = BLACK)
+                        w_button.draw(self.screen)
+                        b_button = Button(label = "Black",
+                        pos = (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
+                        font = 30,
+                        bg = BLACK)
+                        b_button.draw()
+                else:
+                    self.buttons = []
                 if self.game.swap2_state["second_placement"]:
-                    swap2_msg = "White player can place 1 black stone and 1 white stone"
-                if self.game.swap2_state["select_color"]:
+                    swap2_msg = "White player can place 1 black stone and 1 white stone"                    
+                if self.game.swap2_state["select_color"]:                    
                     swap2_msg = "Black player is deciding his color"
-                    w_button = Button(
-                    label = "White",
-                    pos = (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                    font = 30,
-                    bg = BLACK)
-                    w_button.draw(self.screen)
-                    b_button = Button(label = "Black",
-                    pos = (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                    font = 30,
-                    bg = BLACK)
-                    b_button.draw(self.screen)
-                    self.buttons = [w_button,b_button]
+                    if isinstance(self.game.blackPlayer, HumanPlayer):
+                        w_button = Button(
+                        label = "White",
+                        pos = (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
+                        font = 30,
+                        bg = BLACK)
+                        w_button.draw(self.screen)
+                        b_button = Button(label = "Black",
+                        pos = (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
+                        font = 30,
+                        bg = BLACK)
+                        b_button.draw(self.screen)
+                        self.buttons = [w_button,b_button]
                 else:
                     self.buttons = []        
 

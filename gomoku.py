@@ -1,5 +1,4 @@
 from operator import xor
-from tkinter.tix import DirTree
 import numpy as np
 
 from boardstate import BoardState

@@ -9,13 +9,14 @@ WINNING_THREAT = {
 FORCING_THREATS = {
     4 : [
     #Open fours
-    '0X{4}0',
+    '[0Y3]0X{4}0[0Y3]',
     '[Y3]X{2}0X{2}0X{2}[Y3]',
     '[Y3]X{3}0X0X{3}[Y3]',
     #Simple fours
     '[Y3]X{4}0[03Y]',
     '[Y3]X{2}0X{2}[Y3]',
     '[Y3]X0X{3}[Y3]',
+    '[Y3]X{3}0X[Y3]',
     '[Y3]X{4}0X[Y3]',
     '[03Y]0X{4}[3Y]'],
     #Open threes    
@@ -71,7 +72,7 @@ class Threat:
 
     def get_open_slots(self) -> list:
         l = []
-        for m in re.finditer('0', self.group):
+        for m in re.finditer('0+', self.group):            
             l.append(self.cells[m.span()[0]])
         return l
 

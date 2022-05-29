@@ -9,6 +9,11 @@ import numpy as np
 from players import HumanPlayer
 from pygamebutton import Button
 
+THREAT_COLORS = {
+    1 : (0, 255, 0),
+    2 : (255,255,0),
+    3 : (255, 0, 0)
+}
 BOARD_BROWN = (199, 105, 42)
 BOARD_WIDTH = 1000
 BOARD_BORDER = 150
@@ -84,13 +89,26 @@ def make_grid(size):
 
 class GUIHandler:
     def __init__(self, game : Game, humanPlayers : list = [], buttons : list = []):
-        self.game = game 
+        self.game = game
         self.start_points, self.end_points = make_grid(self.game.size)
         self.humanPlayers = humanPlayers
         self.buttons = buttons
+        self.threat_hints = {i : [] for i in range(1,4)}
+        self.on_click_callbacks = []
         
+    def add_on_click_callback(self, func):
+        self.on_click_callbacks.append(func)
+    
+    def add_threat_hint(self, col, row, t_level):
+        self.threat_hints[t_level].append((col,row))
+
+    def remove_threat_hint(self, col, row, t_level):
+        self.threat_hints[t_level].remove((col,row))
+
     def handle_click(self):
         x, y = pygame.mouse.get_pos()
+        for cback in self.on_click_callbacks:
+            cback(x,y)
 
         button_clicked = False
         for b in self.buttons:
@@ -112,17 +130,25 @@ class GUIHandler:
         self.CLICK = pygame.mixer.Sound("wav/click.wav")
         self.font = pygame.font.SysFont("arial", 30)
 
+    def _draw_stone(self, col : int, row : int, color : pygame.Color):
+        x, y = colrow_to_xy(col, row, self.game.size)
+        gfxdraw.aacircle(self.screen, x, y, STONE_RADIUS, color)
+        gfxdraw.filled_circle(self.screen, x, y, STONE_RADIUS, color)
+
+    def _draw_threat_hint(self, col : int, row : int, t_level: int):
+        self._draw_stone(col,row,THREAT_COLORS[t_level])
+
     def draw(self):
         # draw stones - filled circle and antialiased ring
         self.clear_screen()
-        for col, row in zip(*np.where(self.game.board == 1)):
-            x, y = colrow_to_xy(col, row, self.game.size)
-            gfxdraw.aacircle(self.screen, x, y, STONE_RADIUS, BLACK)
-            gfxdraw.filled_circle(self.screen, x, y, STONE_RADIUS, BLACK)
-        for col, row in zip(*np.where(self.game.board == 2)):
-            x, y = colrow_to_xy(col, row, self.game.size)
-            gfxdraw.aacircle(self.screen, x, y, STONE_RADIUS, WHITE)
-            gfxdraw.filled_circle(self.screen, x, y, STONE_RADIUS, WHITE)
+        for col, row in zip(*np.where(self.game.board_state.grid == 1)):
+            self._draw_stone(col,row,BLACK)
+        for col, row in zip(*np.where(self.game.board_state.grid == 2)):
+            self._draw_stone(col,row,WHITE)
+
+        for lvl,hints in self.threat_hints.items():
+            for h in hints:
+                self._draw_threat_hint(*h, lvl)
 
         # text for score and turn info    
         if self.game.winning_player is not None:

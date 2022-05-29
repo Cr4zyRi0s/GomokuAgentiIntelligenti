@@ -2,6 +2,8 @@ from operator import xor
 from tkinter.tix import DirTree
 import numpy as np
 
+from boardstate import BoardState
+
 
 
 
@@ -75,7 +77,8 @@ def is_valid_move(col : int, row : int, board : np.array) -> bool:
 
 class Game:
     def __init__(self, size, whitePlayer, blackPlayer):
-        self.board = np.zeros((size, size))        
+        #self.board = np.zeros((size, size))
+        self.board_state = BoardState(size) 
         self.size = size
 
         self.black_turn = True          
@@ -160,23 +163,22 @@ class Game:
         self.swap2_phase = False        
         self.gui.draw()
         
-    def place_stone(self,move,black) -> bool:
-        c,r = move        
-        if not is_valid_move(c, r, self.board):            
+    def place_stone(self,move,black) -> bool:    
+        if not is_valid_move(*move, self.board_state.grid):            
             return False
         # update board array
-        self.board[c,r] = 1 if black else 2
+        self.board_state.make_move(move,black)
         if self.gui is not None:
             self.gui.draw()
         return True
 
-    def place_stones(self, positions, black) -> bool:
+    def place_stones(self, positions : list, black: bool) -> bool:
         for pos in positions:
-            if not is_valid_move(pos[0], pos[1], self.board):
+            if not is_valid_move(*pos, self.board_state.grid):
                 return False
   
         for pos in positions:
-            self.board[pos[0], pos[1]] = 1 if black else 2
+            self.board_state.make_move(pos, black)
         
         if self.gui is not None:
             self.gui.draw()
@@ -190,7 +192,7 @@ class Game:
         if xor(player_black, self.black_turn):
             return False
         if self.place_stone(move,self.black_turn):
-            if self.check_winning_condition(move, player.color):
+            if check_winning_condition(self.board_state.grid, move, player.color):
                 self.winning_player = player.color
                 if self.gui is not None:
                     self.gui.draw()

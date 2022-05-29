@@ -44,13 +44,13 @@ class Player:
     
 class AIPlayer(Player):    
     def swap2_first_place_stones(self):
-        b_positions = place_random_stones(self.game.board, 2)
-        w_positions = place_random_stones(self.game.board, 1)
+        b_positions = place_random_stones(self.game.board_state.grid, 2)
+        w_positions = place_random_stones(self.game.board_state.grid, 1)
         self.game.swap2_first_placement(b_positions, w_positions)
     
     def swap2_second_place_stones(self):                        
-        b_positions = place_random_stones(self.game.board, 1)
-        w_positions = place_random_stones(self.game.board, 1)
+        b_positions = place_random_stones(self.game.board_state.grid, 1)
+        w_positions = place_random_stones(self.game.board_state.grid, 1)
         self.game.swap2_second_placement(b_positions, w_positions)
 
     def swap2_accept_or_place(self):

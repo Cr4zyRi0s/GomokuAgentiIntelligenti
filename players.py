@@ -63,10 +63,14 @@ class AIPlayer(Player):
         if not self.can_play():
             return
 
+        
+
+        '''
         while not self.game.turn(self,
         (random.randint(0,self.game.size - 1),
         random.randint(0,self.game.size - 1))):
             pass
+        '''
 
 class HumanPlayer(Player):
     def swap2_first_place_stones(self):    

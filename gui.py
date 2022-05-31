@@ -1,3 +1,4 @@
+from platform import python_branch
 from pyparsing import White
 from gomoku import Game
 from pygame import gfxdraw
@@ -94,6 +95,7 @@ class GUIHandler:
         self.humanPlayers = humanPlayers
         self.buttons = buttons
         self.threat_hints = {i : [] for i in range(1,4)}
+        self.winning_streak_lines = []
         self.on_click_callbacks = []
         
     def add_on_click_callback(self, func):
@@ -104,6 +106,9 @@ class GUIHandler:
 
     def remove_threat_hint(self, col, row, t_level):
         self.threat_hints[t_level].remove((col,row))
+
+    def add_winning_streak_line(self, endpoints : tuple):
+        self.winning_streak_lines.append(endpoints)
 
     def handle_click(self):
         x, y = pygame.mouse.get_pos()
@@ -149,6 +154,13 @@ class GUIHandler:
         for lvl,hints in self.threat_hints.items():
             for h in hints:
                 self._draw_threat_hint(*h, lvl)
+
+        for line in self.winning_streak_lines:
+            pygame.draw.line(self.screen,
+            (0,0,255),
+            colrow_to_xy(*line[0],self.game.size),
+            colrow_to_xy(*line[1],self.game.size),
+            5)
 
         # text for score and turn info    
         if self.game.winning_player is not None:

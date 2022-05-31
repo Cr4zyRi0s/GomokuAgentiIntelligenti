@@ -20,10 +20,25 @@ FORCING_THREATS = {
     '[Y3]X{4}0X[Y3]',
     '[03Y]0X{4}[3Y]'],
     #Open threes    
-    3 : []
+    3 : [
+    '[0Y3]0{2}X{3}0{2}[0Y3]',
+    '[0Y3]0X0X{2}0X0[0Y3]',
+    'X0X0X0X0X',
+    #Broken threes
+    '0X0X{2}0',
+    '0X{2}0X0',
+    '[Y3]0X{3}0{2}',
+    '0{2}X{3}0[Y3]'
+    ]
 }
 
-NON_FORCING_THREATS = {}
+NON_FORCING_THREATS = {
+    3 : [
+        '[Y3]X{3}0{2}[0Y3]',
+        '[0Y3]0{2}X{3}[Y3]'
+        ],
+    2 : []
+}
 
 
 def replace_char(string : str, index : int, char):
@@ -65,16 +80,19 @@ def generic_to_black_threat(generic_threats : dict) -> dict:
 
 
 class Threat:
-    def __init__(self, cells: list, group : str, level : int):
+    def __init__(self, cells: list, group : str, span : tuple, level : int):
         self.cells = cells
         self.group = group
+        self.span = span
         self.level = level
 
-    def get_open_slots(self) -> list:
+    def get_open_slots(self) -> set:
         l = []
-        for m in re.finditer('0+', self.group):            
+        for m in re.finditer('01', self.group):            
             l.append(self.cells[m.span()[0]])
-        return l
+        for m in re.finditer('10', self.group):            
+            l.append(self.cells[m.span()[1] - 1])
+        return set(l)
 
     def get_counter_move(self):
         pass
@@ -116,7 +134,7 @@ class BoardState:
         self.board_315 = ''.join([str(el) for el in board_315.flatten()])
 
         self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
-        self.b_winning_threats = generic_to_white_threat(WINNING_THREAT)
+        self.b_winning_threats = generic_to_black_threat(WINNING_THREAT)
 
         self.w_forcing_threats = generic_to_white_threat(FORCING_THREATS)
         self.b_forcing_threats = generic_to_black_threat(FORCING_THREATS)    
@@ -135,13 +153,56 @@ class BoardState:
         
     def unmake_last_move(self):
         c,r,_ = self.moves.pop()
+        self.grid[c, r] = 0
         self._update_boards((c,r), '0')
 
-    def get_current_threats(self, last_move : tuple, black : bool) -> tuple:         
+    def get_all_threats(self, last_move : tuple, black : bool) -> tuple:         
         win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
         force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
         nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
+
+        #TEMPORANEO
+        if black:
+            self.b_winning_threats = win_threats
+            self.b_forcing_threats = force_threats
+            self.b_nforcing_threats = nforce_threats
+        else:
+            self.w_winning_threats = win_threats
+            self.w_forcing_threats = force_threats
+            self.w_nforcing_threats = nforce_threats
+
         return win_threats, force_threats, nforce_threats
+
+    def _check_threats_valid(self, last_move : tuple, black : bool):
+        nf_t = None
+        f_t = None
+        w_t = None
+        if black:
+            nf_t = self.b_nforcing_threats
+            f_t = self.b_nforcing_threats
+            w_t = self.b_winning_threats
+        else:
+            nf_t = self.w_nforcing_threats
+            f_t = self.w_nforcing_threats
+            w_t = self.w_winning_threats
+
+        for lvl,ts in nf_t:
+            for t in ts:
+                pass
+        for lvl,ts in f_t:
+            for t in ts:
+                pass
+        for lvl,ts in w_t:
+            for t in ts:
+                pass
+
+    def _update_threats(self, last_move : tuple, black : bool):        
+        self._check_threats_valid(last_move, True)
+        self._check_threats_valid(last_move, False)
+        
+        #check new threats in intersecting lines
+
+
 
     def _get_threats(self, threat_patterns: dict):
         threats = {}
@@ -151,19 +212,19 @@ class BoardState:
                 for match in re.finditer(patt, self.board):
                     span = match.span()
                     cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
-                    threats[level].append(Threat(cells, match.group(), level))
+                    threats[level].append(Threat(cells, match.group(), span, level))
                 for match in re.finditer(patt,self.board_90):
                     span = match.span()
                     cells = [self._90index_to_cr(i) for i in range(span[0], span[1])]
-                    threats[level].append(Threat(cells, match.group(), level))
+                    threats[level].append(Threat(cells, match.group(), span, level))
                 for match in re.finditer(patt,self.board_45):
                     span = match.span()
                     cells = [self._45index_to_cr(i) for i in range(span[0], span[1])]
-                    threats[level].append(Threat(cells, match.group(), level))
+                    threats[level].append(Threat(cells, match.group(), span, level))
                 for match in re.finditer(patt,self.board_315):
                     span = match.span()
                     cells = [self._315index_to_cr(i) for i in range(span[0], span[1])]
-                    threats[level].append(Threat(cells, match.group(), level))
+                    threats[level].append(Threat(cells, match.group(), span, level))
         return threats
 
     def print_boards(self):
@@ -181,6 +242,7 @@ class BoardState:
     
     def _get_line_45(self, pos : tuple) -> tuple:
         index = self._cr_to_45index(*pos)
+
 
     def _get_line_315(self, pos : tuple) -> tuple:
         index = self._cr_to_315index(*pos)        

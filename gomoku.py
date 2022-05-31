@@ -4,8 +4,6 @@ import numpy as np
 from boardstate import BoardState
 
 
-
-
 def check_line(board, last_move, last_player, direction):
     c,r = last_move
     r1 = r
@@ -76,7 +74,6 @@ def is_valid_move(col : int, row : int, board : np.array) -> bool:
 
 class Game:
     def __init__(self, size, whitePlayer, blackPlayer):
-        #self.board = np.zeros((size, size))
         self.board_state = BoardState(size) 
         self.size = size
 
@@ -201,11 +198,5 @@ class Game:
         return False
 
     def new_turn(self):
-        self.black_turn = not self.black_turn      
-        '''  
-        if self.black_turn:
-            self.blackPlayer.play_turn()
-        else:
-            self.whitePlayer.play_turn()
-        '''
+        self.black_turn = not self.black_turn     
     

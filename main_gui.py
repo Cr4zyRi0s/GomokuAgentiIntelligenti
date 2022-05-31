@@ -6,7 +6,6 @@ import random
 
 MOVE_TIME = 15
 
-
 if __name__ == "__main__":
     ai_white = AIPlayer()
     ai_black = AIPlayer()
@@ -42,12 +41,11 @@ if __name__ == "__main__":
     game.board_state.make_move((7,10),True)
     game.board_state.make_move((8,10),True)
     '''
-
     w_t,f_t,nf_t = game.board_state.get_current_threats((0,0), True)
 
     for lvl,ts in w_t.items():
         for t in ts:
-            pass
+            gui.add_winning_streak_line((t.cells[0], t.cells[-1]))
     
     for lvl,ts in f_t.items():
         for t in ts:

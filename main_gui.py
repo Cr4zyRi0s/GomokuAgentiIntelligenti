@@ -1,21 +1,56 @@
 from gomoku import Game
 from gui import GUIHandler
-from players import AIPlayer, HumanPlayer
+from players import AIPlayer, AIRandomPlayer, HumanPlayer
 import pygame
 import random
 
 MOVE_TIME = 15
 
+def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
+    pthreats = game.board_state.b_threats if black else game.board_state.w_threats
+    for lvl, ts in pthreats.items():    
+        for t in ts:
+            if lvl == 5:
+                gui.add_winning_streak_line(t.cells[0], t.cells[1])
+            else:
+                for s in t.get_open_slots():
+                    gui.add_threat_hint(*s,lvl - 2)
+
+
+def draw_threat_hints(game : Game, gui : GUIHandler):
+    draw_threats_for_player(game,gui,True)
+    draw_threats_for_player(game,gui,False)
+
 if __name__ == "__main__":
-    ai_white = AIPlayer()
-    ai_black = AIPlayer()
-    #human  = HumanPlayer()
-    game = Game(size=15, whitePlayer=ai_white, blackPlayer=ai_black)    
+    ai_white = AIRandomPlayer()
+    
+    #ai_black = AIPlayer()
+
+    human  = HumanPlayer()
+    game = Game(size=15, whitePlayer=ai_white, blackPlayer=human)    
     gui = GUIHandler(game, [])
     game.gui = gui
-    
-    print(game.board_state.grid.shape)
+    game.skip_swap2()
 
+    gui.init_pygame()
+    gui.clear_screen()
+    gui.draw()
+
+    update_threat_hints = lambda: draw_threat_hints(game,gui) 
+    game.on_turn_change_callbacks.append(update_threat_hints)
+    
+    ai_white_play = lambda: ai_white.play_turn()
+    game.on_turn_change_callbacks.append(ai_white_play)
+
+    #game.swap2_init()
+    #one_turn_ahead = lambda x,y : ai_white.play_turn() if not game.black_turn else ai_black.play_turn()
+    #gui.add_on_click_callback(one_turn_ahead)
+    while True:    
+        gui.update()
+        pygame.time.wait(100)
+
+
+    '''
     for j in range(game.board_state.grid.shape[1]):
         for i in range(game.board_state.grid.shape[0]):
             rand = random.randint(1,3)
@@ -25,6 +60,7 @@ if __name__ == "__main__":
                 else:
                     game.board_state.make_move((j,i), False)
 
+    '''
     '''
     game.board_state.make_move((0,1),True)
     game.board_state.make_move((0,2),True)
@@ -41,6 +77,7 @@ if __name__ == "__main__":
     game.board_state.make_move((7,10),True)
     game.board_state.make_move((8,10),True)
     '''
+    '''
     w_t,f_t,nf_t = game.board_state.get_current_threats((0,0), True)
 
     for lvl,ts in w_t.items():
@@ -56,17 +93,4 @@ if __name__ == "__main__":
         for t in ts:
             for s in t.get_open_slots():
                 gui.add_threat_hint(*s,1)
-
-    gui.init_pygame()
-    gui.clear_screen()
-    gui.draw()
-
-    #game.swap2_init()
-
-    one_turn_ahead = lambda x,y : ai_white.play_turn() if not game.black_turn else ai_black.play_turn()
-    #gui.add_on_click_callback(one_turn_ahead)
-
-    while True:    
-        gui.update()
-        pygame.time.wait(100)
-        
+    '''

@@ -89,18 +89,21 @@ def make_grid(size):
     return (start_points, end_points)
 
 class GUIHandler:
-    def __init__(self, game : Game, humanPlayers : list = [], buttons : list = []):
+    def __init__(self, game : Game, buttons : list = []):
         self.game = game
         self.start_points, self.end_points = make_grid(self.game.size)
-        self.humanPlayers = humanPlayers
+        self.humanPlayers = [p for p in [game.blackPlayer,game.whitePlayer] if isinstance(p, HumanPlayer)]
         self.buttons = buttons
-        self.threat_hints = {i : [] for i in range(1,4)}
+        self.reset_threat_hints()
         self.winning_streak_lines = []
         self.on_click_callbacks = []
         
     def add_on_click_callback(self, func):
         self.on_click_callbacks.append(func)
     
+    def reset_threat_hints(self):
+        self.threat_hints = {i : [] for i in range(1,6)}
+
     def add_threat_hint(self, col, row, t_level):
         self.threat_hints[t_level].append((col,row))
 

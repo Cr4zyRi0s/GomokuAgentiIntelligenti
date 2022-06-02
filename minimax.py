@@ -30,7 +30,7 @@ def check_neighbours(board:np.array, pos: tuple):
 
 def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
     children = []
-    nf_t, f_t,_ = state.get_all_threats(None, not maximize)    
+    nf_t, f_t,_ = state.get_all_threats(not maximize)    
     n_threats = 0
 
     for lvl, ts in nf_t:
@@ -60,6 +60,7 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
 
 def gomoku_state_static_eval(state : BoardState):
     score = 0
+
     for lvl,ts in state.b_forcing_threats:
         for t in ts: 
             score += lvl * 3         

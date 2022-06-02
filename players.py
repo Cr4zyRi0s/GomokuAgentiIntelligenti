@@ -44,6 +44,21 @@ class Player:
     
 class AIPlayer(Player):    
     def swap2_first_place_stones(self):
+        pass
+    def swap2_second_place_stones(self):                        
+        pass
+    def swap2_accept_or_place(self):
+        pass
+    def swap2_select_color(self):
+        pass
+
+    def play_turn(self):
+        if not self.can_play():
+            return
+
+        
+class AIRandomPlayer(AIPlayer):
+    def swap2_first_place_stones(self):
         b_positions = place_random_stones(self.game.board_state.grid, 2)
         w_positions = place_random_stones(self.game.board_state.grid, 1)
         self.game.swap2_first_placement(b_positions, w_positions)
@@ -63,14 +78,11 @@ class AIPlayer(Player):
         if not self.can_play():
             return
 
-        
-
-        '''
         while not self.game.turn(self,
         (random.randint(0,self.game.size - 1),
         random.randint(0,self.game.size - 1))):
             pass
-        '''
+
 
 class HumanPlayer(Player):
     def swap2_first_place_stones(self):    

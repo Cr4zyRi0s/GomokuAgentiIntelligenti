@@ -77,6 +77,8 @@ class Game:
         self.board_state = BoardState(size) 
         self.size = size
 
+        self.on_turn_change_callbacks = []
+
         self.black_turn = True          
         self.winning_player = None        
 
@@ -95,6 +97,9 @@ class Game:
         "accept_or_place" : False ,
         "second_placement" : False,
         "select_color" : False}
+
+    def skip_swap2(self):
+        self.swap2_phase = False
 
     def pass_move(self):
         self.black_turn = not self.black_turn
@@ -187,16 +192,19 @@ class Game:
         player_black = player == self.blackPlayer
         if xor(player_black, self.black_turn):
             return False
+
         if self.place_stone(move,self.black_turn):
             if check_winning_condition(self.board_state.grid, move, player.color):
                 self.winning_player = player.color
-                if self.gui is not None:
-                    self.gui.draw()
                 return True
             self.new_turn()
+            if self.gui is not None:
+                self.gui.draw()
             return True
         return False
 
     def new_turn(self):
-        self.black_turn = not self.black_turn     
+        self.black_turn = not self.black_turn
+        for cback in self.on_turn_change_callbacks:
+            cback()     
     

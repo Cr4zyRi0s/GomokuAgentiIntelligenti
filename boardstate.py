@@ -107,11 +107,22 @@ def index315_to_cr(index,size)  -> tuple:
     r = rc - size + c + 1
     return c,r
 
+def get_index_transform_func(angle : int):
+    if angle == 0:
+        return index_to_cr
+    elif angle == 45:
+        return index45_to_cr
+    elif angle == 90:
+        return index90_to_cr
+    elif angle == 315:
+        return index315_to_cr
+    else:
+        raise Exception('Invalid angle value %d' % (angle))
 
 class Threat:
-    def __init__(self, cells: list, group : str, span : tuple, level : int, angle:int):
+    def __init__(self, group : str, span : tuple, level : int, angle:int, board_size : int  = 15):
         t_func = get_index_transform_func(angle)
-        self.cells = [t_func(index) for index in range(span[0], span[1])]
+        self.cells = [t_func(index, board_size) for index in range(span[0], span[1])]
         self.group = group
         self.span = span
         self.level = level
@@ -143,6 +154,9 @@ class Threat:
             and self.cells[-1] == other.cells[-1]:
             return True
         return False
+
+    def __str__(self) -> str:
+        return '(Threat / group = \'%s\', level = %d, span = (%d, %d))' % (self.group, self.level, self.span[0], self.span[1])
 
 class BoardState:
     def __init__(self,size = 15):
@@ -250,6 +264,7 @@ class BoardState:
         nf_t = self.b_nforcing_threats if black else self.w_nforcing_threats
         
         ts = self.b_threats if black else self.w_threats
+
         for lvl,patts in w_t.items():
             self._get_threats_in_repr(line, patts, lvl, ts, span[0], 0)
             self._get_threats_in_repr(line90, patts, lvl, ts, span90[0], 90)

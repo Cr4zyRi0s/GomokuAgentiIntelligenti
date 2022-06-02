@@ -23,9 +23,7 @@ def draw_threat_hints(game : Game, gui : GUIHandler):
 
 if __name__ == "__main__":
     ai_white = AIRandomPlayer()
-    
     #ai_black = AIPlayer()
-
     human  = HumanPlayer()
     game = Game(size=15, whitePlayer=ai_white, blackPlayer=human)    
     gui = GUIHandler(game, [])
@@ -42,6 +40,8 @@ if __name__ == "__main__":
     ai_white_play = lambda: ai_white.play_turn()
     game.on_turn_change_callbacks.append(ai_white_play)
 
+    print_threats = lambda: print('black threats:', game.board_state.b_threats)
+    game.on_turn_change_callbacks.append(print_threats)
     #game.swap2_init()
     #one_turn_ahead = lambda x,y : ai_white.play_turn() if not game.black_turn else ai_black.play_turn()
     #gui.add_on_click_callback(one_turn_ahead)

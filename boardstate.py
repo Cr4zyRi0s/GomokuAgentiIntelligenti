@@ -1,8 +1,10 @@
-from os import stat
 import numpy as np
 import re
-import random
+import itertools
+import networkx as nx
+import time
 
+'''
 WINNING_THREAT = {
  5 : 
  ['[0Y3]X{5}[0Y3]']
@@ -40,8 +42,17 @@ NON_FORCING_THREATS = {
         ],
     2 : []
 }
+'''
 
 
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+#UTILITY FUNCTIONS
+
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]
 
@@ -119,6 +130,117 @@ def get_index_transform_func(angle : int):
     else:
         raise Exception('Invalid angle value %d' % (angle))
 
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+
+
+def generate_all_sequences_of_len(length : int) -> set:
+    all_seqs = set(itertools.product('01', repeat = length))
+    all_seqs = {''.join(s) for s in all_seqs}
+    all_seqs.remove(''.join(['0' for _ in range(length)]))    
+
+    to_remove = set()
+    for s in all_seqs:
+        if len(re.findall('1{6,}',s)) > 0:
+            to_remove.add(s)
+
+        #elif len(re.findall('10{2,}1',s)) > 0:
+        #    to_remove.add(s)
+        
+        elif length > 5 and s.count('1') >= length - 1:
+            to_remove.add(s)
+
+    all_seqs.difference_update(to_remove)
+    return all_seqs
+
+def generate_threat_info(seq : str):    
+    if len(list(re.finditer('(?<!1)1{5}(?!1)', seq))) == 1:
+        return {seq},{},{}
+
+    n_ones = seq.count('1')
+    zeros_pos = [m.span()[0] for m in re.finditer('0', seq)]
+    perms = itertools.product('01', repeat=len(zeros_pos))    
+
+    possible_moves = set()
+    possible_5s = set()
+    for p in perms:        
+        candidate = seq[:]
+
+        for i in range(len(zeros_pos)):
+            candidate = replace_char(candidate, zeros_pos[i], p[i])
+
+        if candidate.count('1') < 5:
+            continue
+        if candidate.count('1') > 5 and n_ones < 5:
+            continue
+
+        win_seq_match = list(re.finditer('(?<!1)1{5}(?!1)', candidate))
+        if len(win_seq_match) == 1:
+            possible_5s.add(candidate)
+            ones_pos = [zeros_pos[m.span()[0]] for m in re.finditer('1', ''.join(p))]
+            for i in range(len(ones_pos)):
+                possible_moves.add((ones_pos[i]))
+
+    best_defences = get_best_defence_for_threat(seq,possible_5s)
+    return possible_5s, possible_moves, best_defences    
+
+def get_best_defence_for_threat(threat : str, possible_5s : set) -> list:
+    zeros_pos = [m.span()[0] for m in re.finditer('0', threat)]
+    n_of_blocks = [0 for _ in range(len(zeros_pos))]
+    for five in possible_5s:
+        for zi in range(len(zeros_pos)):
+            if five[zeros_pos[zi]] == '1':
+                n_of_blocks[zi] += 1
+    
+    max_blocks = max(n_of_blocks)
+    best_def = {zeros_pos[i] for i in range(len(zeros_pos)) if n_of_blocks[i] == max_blocks}
+    return best_def
+
+
+def precompute_threats(max_seq_len = 7) -> dict:
+    threats = {i:dict() for i in range(5, max_seq_len + 1)}
+    all_seqs = {i: generate_all_sequences_of_len(i) for i in range(5, max_seq_len + 1)}
+    
+    for s in all_seqs[5]:
+        p_5s,p_moves,b_def = generate_threat_info(s)
+        sev = len(p_5s)
+        if sev == 0:
+            continue        
+        lvls = [threats[5][s[i : i + 5]]['type'][0] for i in range(0,1) if s[i : i + 5] in threats[5].keys()]
+        threats[5][s] = {'type' : (s.count('1'), sev), 'p_moves' : p_moves, 'b_def' : b_def}
+
+    for l in range(6,max_seq_len + 1):
+        for s in all_seqs[l]:
+            p_5s,p_moves,b_def = generate_threat_info(s)
+            sev = len(p_5s)
+            if sev == 0:
+                continue        
+            lvls = [threats[5][s[i : i + 5]]['type'][0] for i in range(0, l - 4) if s[i : i + 5] in threats[5].keys()]
+            threats[l][s] = {'type' : (max(lvls), sev), 'p_moves' : p_moves, 'b_def' : b_def}
+    return threats
+
+def generate_dependency_graph(threats : dict, max_seq_len : int = 7) -> dict:    
+    graphs = {}
+    for l in range(5,max_seq_len + 1):
+        curr_g = nx.DiGraph()
+        curr_g.add_nodes_from(threats[l].keys())
+        for seq,info in threats[l].items():
+            for m in info['p_moves']:
+                curr_g.add_edge(seq, replace_char(seq,m,'1'), move = m)   
+        graphs[l] = curr_g
+                
+    return graphs        
+
+
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+#THREAT CLASS
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+
 class Threat:
     def __init__(self, group : str, span : tuple, level : int, angle:int, board_size : int  = 15):
         t_func = get_index_transform_func(angle)
@@ -158,6 +280,14 @@ class Threat:
     def __str__(self) -> str:
         return '(Threat / group = \'%s\', level = %d, span = (%d, %d))' % (self.group, self.level, self.span[0], self.span[1])
 
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+#BOARD STATE CLASS
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+
 class BoardState:
     def __init__(self,size = 15):
         self.size = size    
@@ -177,7 +307,7 @@ class BoardState:
         self.board_45 = ''.join([str(el) for el in board_45.flatten()])
         self.board_90 = ''.join([str(el) for el in board.flatten()])
         self.board_315 = ''.join([str(el) for el in board_315.flatten()])
-
+        '''
         self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
         self.b_winning_threats = generic_to_black_threat(WINNING_THREAT)
 
@@ -186,7 +316,7 @@ class BoardState:
         
         self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
         self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   
-        
+        '''
         self.w_threats = {5 : set(), 4 : set(), 3 : set()}
         self.b_threats = {5 : set(), 4 : set(), 3 : set()}
     
@@ -343,8 +473,6 @@ class BoardState:
             extr = ((self.size - 1, c + r - self.size + 1),(c + r - self.size + 1, self.size - 1))
  
         bounds = (cr_to_index45(*extr[1],self.size), cr_to_index45(*extr[0],self.size))
-        #print(extr)
-        #print(bounds)
         return bounds, self.board_45[bounds[0] : bounds[1] + 1]      
 
     def _get_line_315(self, pos : tuple) -> tuple:
@@ -360,8 +488,6 @@ class BoardState:
             extr = ((0,  - offset + self.size - 1),( offset, self.size - 1))
              
         bounds = (cr_to_index315(*extr[0], self.size), cr_to_index315(*extr[1], self.size))
-        #print(extr)
-        #print(bounds)
         return bounds, self.board_315[bounds[0] : bounds[1] + 1]    
 
     def _update_boards(self, move, stone):
@@ -372,100 +498,11 @@ class BoardState:
         self.board_315 = replace_char(self.board_315, cr_to_index315(c,r, self.size), stone)
 
 if __name__ == '__main__':
-    state = BoardState(10)
-    '''
-    moves = [(i,1) for i in range(2,6)]
-    for m in moves:
-        state.make_move(m,True)
-    '''
-    '''
-    for j in range(state.grid.shape[1]):
-        for i in range(state.grid.shape[0]):
-            rand = random.randint(1,3)
-            if rand > 1:
-                if rand == 2:
-                    state.make_move((j,i), True)
-                else:
-                    state.make_move((j,i), False)
-    '''
-    '''
-    print(state._get_line_45((2,2)))
-    print(state._get_line_45((2,1)))    
-    print(state._get_line_45((1,2)))
-    print(state._get_line_45((4,1)))
-    print(state._get_line_45((4,4)))
-    '''
-    '''
-    moves = [(i, 4-i) for i in range(5)]
-    for m in moves:
-        state.make_move(m, True)
-    print(state.board_45)
-    print(state._get_line_45((2,2)))
-    '''
-    '''
-    moves = [(i,i) for i in range(4)]
-    moves.extend([(i,i + 2) for i in range(4)])
-    moves.extend([(i + 2,i) for i in range(4)])
+    t = time.time
+    threats = precompute_threats()
+    print('elapsed time:', round(time.time - t,4))
 
-    for m in moves:
-        state.make_move(m,True)
-
-    print(state.board_315)
-    print(state._get_line_315((0,0)))
-    print(state._get_line_315((0,2)))
-    print(state._get_line_315((2,0)))
-    '''
-    '''
-    test = [state._index_to_cr(state._cr_to_index(*m)) for m in moves]
-    test_90 = [state._90index_to_cr(state._cr_to_90index(*m)) for m in moves]
-    test_45 = [state._45index_to_cr(state._cr_to_45index(*m)) for m in moves]
-    test_315 = [state._315index_to_cr(state._cr_to_315index(*m)) for m in moves]
-
-    for i in range(5):
-        if moves[i][0] != test[i][0] or moves[i][1] != test[i][1]:
-            print('ERROR')
-        if moves[i][0] != test_90[i][0] or moves[i][1] != test_90[i][1]:
-            print('ERROR')
-        if moves[i][0] != test_45[i][0] or moves[i][1] != test_45[i][1]:
-            print('ERROR')
-        if moves[i][0] != test_315[i][0] or moves[i][1] != test_315[i][1]:
-            print('ERROR')
-
-    print('done')
-    '''
-    '''
-    state.make_move((0,1), True)
-    state.make_move((1,1), True)
-    state.make_move((2,1), True)
-    state.make_move((3,1), True)
-    state.make_move((4,1), True)
-    state.print_boards()
+    for threat in threats[7].items():
+        print(threat)
     
-    print('\n\nUNMAKING MOVES\n\n')
-    state.unmake_last_move()
-    state.unmake_last_move()
-    state.unmake_last_move()
-    state.unmake_last_move()
-    state.unmake_last_move()
-    state.print_boards()
-    '''
-
-    '''
-    for patt in patts:
-        for match in re.finditer(patt, self.board):
-            span = match.span()
-            cells = [self._index_to_cr(i) for i in range(span[0], span[1])]
-            threats[level].append(Threat(cells, match.group(), span, level))
-        for match in re.finditer(patt,self.board_90):
-            span = match.span()
-            cells = [self._90index_to_cr(i) for i in range(span[0], span[1])]
-            threats[level].append(Threat(cells, match.group(), span, level))
-        for match in re.finditer(patt,self.board_45):
-            span = match.span()
-            cells = [self._45index_to_cr(i) for i in range(span[0], span[1])]
-            threats[level].append(Threat(cells, match.group(), span, level))
-        for match in re.finditer(patt,self.board_315):
-            span = match.span()
-            cells = [self._315index_to_cr(i) for i in range(span[0], span[1])]
-            threats[level].append(Threat(cells, match.group(), span, level))
-    '''
+    

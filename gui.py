@@ -12,8 +12,10 @@ from pygamebutton import Button
 
 THREAT_COLORS = {
     1 : (0, 255, 0),
-    2 : (255,255,0),
-    3 : (255, 0, 0)
+    2 : (128,255,0),
+    3 : (255, 255, 0),
+    4 : (255,128,0),
+    5 : (255,0,0)
 }
 BOARD_BROWN = (199, 105, 42)
 BOARD_WIDTH = 1000

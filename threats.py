@@ -5,6 +5,8 @@ import time
 import json 
 from tqdm import tqdm
 
+from utils import get_index_transform_func
+
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]
 
@@ -105,26 +107,80 @@ def generate_dependency_graph(threats : dict, max_seq_len : int = 7) -> dict:
         for seq,info in threats[l].items():
             for m in info['p_moves']:
                 curr_g.add_edge(seq, replace_char(seq,m,'1'), move = m)   
-        graphs[l] = curr_g
-                
+        graphs[l] = curr_g                
     return graphs        
 
 def load_precomputed_threats(filename = 'threat_data.json'):
     with open('threat_data.json', 'r') as file:
         l_threats = json.load(file)
-    return l_threats
+
+    b_threats = {}
+    w_threats = {}
+    max_l = max([int(k) for k in l_threats.keys()])
+    for l in range(5,max_l + 1):
+        b_threats[l] = {}
+        w_threats[l] = {}
+        for seq,info in l_threats[str(l)].items():
+            type = info['type']
+            p_moves = info['p_moves']
+            b_def = info['b_def']
+
+            b_threats[l][seq] = {
+                'type' : (int(type[0]), int(type[1])),
+                'p_moves' : [int(m) for m in p_moves],
+                'b_def' : [int(d) for d in b_def]
+            }
+            w_threats[l][seq.replace('1','2')] = {
+                'type' : (int(type[0]), int(type[1])),
+                'p_moves' : [int(m) for m in p_moves],
+                'b_def' : [int(d) for d in b_def]
+            }
+
+    return b_threats, w_threats
+
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+#THREAT CLASS
+#-----------------------------------------------------------------------------------------
+#////////////////////////////////////////////////////////////////////////////////////////
+#-----------------------------------------------------------------------------------------
+
+class Threat:
+    def __init__(self, info : tuple, span : tuple, angle:int):
+        self.info = info
+        self.span = span
+        self.angle = angle
+        # t_func = get_index_transform_func(angle)
+        # self.cells = [t_func(index, board_size) for index in range(span[0], span[1])]
+
+    def get_open_slots(self) -> set:
+        return {m + self.span[0] for m in self.info['p_moves']}
+
+    def get_counter_moves(self) -> set:
+        return set(self.info['b_def'])
+        
+    def __hash__(self) -> int:
+        # return 23 * self.cells[0][0] + 29 * self.cells[0][1] + 71 * self.cells[1][0] + 73 * self.cells[1][1]
+        return 23 * self.span[0] + 29 * self.span[1] + self.angle * 71 
+    
+    def __eq__(self, other) -> bool:
+        if not isinstance(other,Threat):
+            return False        
+        #Check
+        if self.__hash__() == other.__hash__():
+            return True
+        return False
+
+    def __str__(self) -> str:
+        return '(Threat / group = \'%s\', level = %d, span = (%d, %d))' % (self.group, self.level, self.span[0], self.span[1])
+
 
 
 if __name__ == '__main__':
     t = time.time()
-    threats = precompute_threats(15)
-    with open('threat_data.json', 'w') as file:
-        json.dump(threats, file)
-    print('elapsed time:', round(time.time() - t,4))
-
-    t = time.time()
-    with open('threat_data.json', 'r') as file:
-        l_threats = json.load(file)
+    b_threats, w_threats = load_precomputed_threats()
+    print(w_threats[5])
     print('elapsed time:', round(time.time() - t,4))
 
 

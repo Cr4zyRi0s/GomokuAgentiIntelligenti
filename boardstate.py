@@ -3,184 +3,20 @@ import numpy as np
 import re
 import time
 
-'''
-WINNING_THREAT = {
- 5 : 
- ['[0Y3]X{5}[0Y3]']
-}
-FORCING_THREATS = {
-    4 : [
-    #Open fours
-    '[0Y3]0X{4}0[0Y3]',
-    '[Y3]X{2}0X{2}0X{2}[Y3]',
-    '[Y3]X{3}0X0X{3}[Y3]',
-    #Simple fours
-    '[Y3]X{4}0[03Y]',
-    '[Y3]X{2}0X{2}[Y3]',
-    '[Y3]X0X{3}[Y3]',
-    '[Y3]X{3}0X[Y3]',
-    '[Y3]X{4}0X[Y3]',
-    '[03Y]0X{4}[3Y]'],
-    #Open threes    
-    3 : [
-    '[0Y3]0{2}X{3}0{2}[0Y3]',
-    '[0Y3]0X0X{2}0X0[0Y3]',
-    'X0X0X0X0X',
-    #Broken threes
-    '0X0X{2}0',
-    '0X{2}0X0',
-    '[Y3]0X{3}0{2}',
-    '0{2}X{3}0[Y3]'
-    ]
-}
+from utils import *
 
-NON_FORCING_THREATS = {
-    3 : [
-        '[Y3]X{3}0{2}[0Y3]',
-        '[0Y3]0{2}X{3}[Y3]'
-        ],
-    2 : []
-}
-'''
+from threats import load_precomputed_threats
+from threats import Threat
 
+BLACK_SEQUENCE_RGX = '[01]{5,}'
+WHITE_SEQUENCE_RGX = '[02]{5,}'
 
-#-----------------------------------------------------------------------------------------
-#////////////////////////////////////////////////////////////////////////////////////////
-#-----------------------------------------------------------------------------------------
-#UTILITY FUNCTIONS
+WINNING_THREAT_TYPES = [(5,1)]
+FORCING_THREAT_TYPES = [(4,2),(4,1),(3,3),(3,2)]
+NON_FORCING_THREAT_TYPES = [(3,1)]
+for i in range(1,3):
+    NON_FORCING_THREAT_TYPES.extend([(i,j) for j in range(1, 6 - i + 1)])
 
-#-----------------------------------------------------------------------------------------
-#////////////////////////////////////////////////////////////////////////////////////////
-#-----------------------------------------------------------------------------------------
-def replace_char(string : str, index : int, char):
-    return string[:index] + char + string[index + 1:]
-
-def rot45(mat : np.array):
-    n,m = mat.shape
-    ctr = 0    
-    new_mat = np.full((2 * n - 1, n), 3, mat.dtype)
-    while(ctr < 2 * n -1):     
-        for i in range(m):                
-            for j in range(n):
-                if i + j == ctr:
-                    new_mat[ctr, j] = mat[i,j]
-        ctr += 1
-    return new_mat
-
-def rot315(mat : np.array):
-    n,m = mat.shape
-    ctr = 0    
-    new_mat = np.full((2 * n - 1, n), 3, dtype = mat.dtype)
-    while(ctr < 2 * n -1):     
-        for i in range(m):                
-            for j in range(n):
-                if i + (m - j) - 1 == ctr:
-                    new_mat[ctr, j] = mat[i,j]
-        ctr += 1
-    return new_mat
-
-def generic_to_white_threat(generic_threats : dict) -> dict:
-    return { k:
-    [pattern.replace('X','2').replace('Y','1') for pattern in v]
-    for k,v in generic_threats.items()}
-
-def generic_to_black_threat(generic_threats : dict) -> dict:
-    return { k:
-    [pattern.replace('X','1').replace('Y','2') for pattern in v]
-    for k,v in generic_threats.items()}
-
-def cr_to_index(c,r,size) -> int:
-    return r * (size + 2) + c + 1
-def cr_to_index90(c,r,size) -> int:
-    return c * (size + 2) + r + 1
-def cr_to_index45(c,r,size) -> int:
-    return (r + c) * (size + 2) + c + 1
-def cr_to_index315(c,r,size) -> int:
-    return (r + size - c - 1) * (size + 2) + c + 1
-
-def index_to_cr(index,size) -> tuple:
-    r = index // (size + 2)
-    c = index - r * (size + 2) - 1
-    return c,r
-def index90_to_cr(index,size) -> tuple:
-    c = index // (size + 2)
-    r = index - c * (size + 2) - 1
-    return c,r     
-def index45_to_cr(index,size)  -> tuple:
-    rc = index // (size + 2)
-    c = index - rc * (size + 2) - 1
-    r = rc - c
-    return c,r 
-def index315_to_cr(index,size)  -> tuple:
-    rc = index // (size + 2)
-    c = index - rc * (size + 2) - 1
-    r = rc - size + c + 1
-    return c,r
-
-def get_index_transform_func(angle : int):
-    if angle == 0:
-        return index_to_cr
-    elif angle == 45:
-        return index45_to_cr
-    elif angle == 90:
-        return index90_to_cr
-    elif angle == 315:
-        return index315_to_cr
-    else:
-        raise Exception('Invalid angle value %d' % (angle))
-
-#-----------------------------------------------------------------------------------------
-#////////////////////////////////////////////////////////////////////////////////////////
-#-----------------------------------------------------------------------------------------
-
-
-
-#-----------------------------------------------------------------------------------------
-#////////////////////////////////////////////////////////////////////////////////////////
-#-----------------------------------------------------------------------------------------
-#THREAT CLASS
-#-----------------------------------------------------------------------------------------
-#////////////////////////////////////////////////////////////////////////////////////////
-#-----------------------------------------------------------------------------------------
-
-class Threat:
-    def __init__(self, group : str, span : tuple, level : int, angle:int, board_size : int  = 15):
-        t_func = get_index_transform_func(angle)
-        self.cells = [t_func(index, board_size) for index in range(span[0], span[1])]
-        self.group = group
-        self.span = span
-        self.level = level
-        self.angle = angle
-
-    def get_open_slots(self) -> set:
-        l = []
-        for m in re.finditer('01', self.group):            
-            l.append(self.cells[m.span()[0]])
-        for m in re.finditer('10', self.group):            
-            l.append(self.cells[m.span()[1] - 1])
-        return set(l)
-
-    def get_counter_move(self):
-        pass
-
-    def get_next_level_threats(self) -> dict:
-        pass
-
-    def __hash__(self) -> int:
-        return 23 * self.cells[0][0] + 29 * self.cells[0][1] + 71 * self.cells[1][0] + 73 * self.cells[1][1]
-    
-    def __eq__(self, other) -> bool:
-        if not isinstance(other,Threat):
-            return False        
-        #Check
-        if self.group == other.group \
-            and self.cells[0] == other.cells[0] \
-            and self.cells[-1] == other.cells[-1]:
-            return True
-        return False
-
-    def __str__(self) -> str:
-        return '(Threat / group = \'%s\', level = %d, span = (%d, %d))' % (self.group, self.level, self.span[0], self.span[1])
 
 #-----------------------------------------------------------------------------------------
 #////////////////////////////////////////////////////////////////////////////////////////
@@ -209,25 +45,18 @@ class BoardState:
         self.board_45 = ''.join([str(el) for el in board_45.flatten()])
         self.board_90 = ''.join([str(el) for el in board.flatten()])
         self.board_315 = ''.join([str(el) for el in board_315.flatten()])
-        '''
-        self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
-        self.b_winning_threats = generic_to_black_threat(WINNING_THREAT)
 
-        self.w_forcing_threats = generic_to_white_threat(FORCING_THREATS)
-        self.b_forcing_threats = generic_to_black_threat(FORCING_THREATS)    
-        
-        self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
-        self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   
-        '''
-        self.w_threats = {5 : set(), 4 : set(), 3 : set()}
-        self.b_threats = {5 : set(), 4 : set(), 3 : set()}
+        b_threats_info, w_threats_info = load_precomputed_threats()
+        self.b_threats_info = b_threats_info
+        self.w_threats_info = w_threats_info
+        self.w_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
+        self.b_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
     
     def make_move(self,move,is_black):
         self.grid[move[0], move[1]] = 1 if is_black else 2 
         stone = '1' if is_black else '2' 
         self._update_boards(move, stone)
         self._update_threats(move, is_black)
-        #self._update_threats(move, not is_black)
         self.moves.append((*move,is_black))
         
     def unmake_last_move(self):
@@ -268,7 +97,7 @@ class BoardState:
     def _prune_old_threats(self, spans : tuple, black : bool):
         pthreats = self.b_threats if black else self.w_threats
         to_remove = set()
-        for lvl, ts in pthreats.items():
+        for type, ts in pthreats.items():
             for t in ts:
                 #repr = self._get_repr_from_angle(t.angle)
                 s = spans[t.angle]
@@ -290,54 +119,40 @@ class BoardState:
 
         self._prune_old_threats(spans, True)
         self._prune_old_threats(spans, False)   
-
-        w_t = self.b_winning_threats if black else self.w_winning_threats
-        f_t = self.b_forcing_threats if black else self.w_forcing_threats
-        nf_t = self.b_nforcing_threats if black else self.w_nforcing_threats
         
         ts = self.b_threats if black else self.w_threats
 
-        for lvl,patts in w_t.items():
-            self._get_threats_in_repr(line, patts, lvl, ts, span[0], 0)
-            self._get_threats_in_repr(line90, patts, lvl, ts, span90[0], 90)
-            self._get_threats_in_repr(line45, patts, lvl, ts, span45[0], 45)
-            self._get_threats_in_repr(line315, patts, lvl, ts, span315[0], 315)
-
-        for lvl,patts in f_t.items():
-            self._get_threats_in_repr(line, patts, lvl, ts, span[0], 0)
-            self._get_threats_in_repr(line90, patts, lvl, ts, span90[0], 90)
-            self._get_threats_in_repr(line45, patts, lvl, ts, span45[0], 45)
-            self._get_threats_in_repr(line315, patts, lvl, ts, span315[0], 315)
-
-        for lvl,patts in nf_t.items():
-            self._get_threats_in_repr(line, patts, lvl, ts, span[0], 0)
-            self._get_threats_in_repr(line90, patts, lvl, ts, span90[0], 90)
-            self._get_threats_in_repr(line45, patts, lvl, ts, span45[0], 45)
-            self._get_threats_in_repr(line315, patts, lvl, ts, span315[0], 315)
+        self._get_threats_in_repr(ts, line, black, span[0], 0)
+        self._get_threats_in_repr(ts, line90, black, span90[0], 90)
+        self._get_threats_in_repr(ts, line45, black, span45[0], 45)
+        self._get_threats_in_repr(ts, line315, black, span315[0], 315)
 
 
-    def _get_threats_in_repr(self, repr:str, patterns, level:int, dst : dict, offset:int = 0, angle = 0):
-        for patt in patterns:
-            for match in re.finditer(patt, repr):
-                span = match.span()
-                if offset != 0:      
-                    span = list(span)           
-                    span[0] += offset
-                    span[1] += offset
-                    span = tuple(span)                
-                if not isinstance(dst[level], set):
-                    dst[level].append(Threat(match.group(), span, level, angle))
+    def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
+        rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
+        t_info = self.b_threats_info if black else self.w_threats_info
+        #t_dict = self.b_threats if black else self.w_threats
+        for match in re.finditer(rgx, repr):
+            len = match.endpos - match.pos
+            info = t_info[len].get(match.group())
+            if info is not None:
+                span = (match.pos + offset, match.endpos + offset)
+                if info['type'] in WINNING_THREAT_TYPES:
+                    dst['winning'].add(Threat(info,span,angle))
+                elif info['type'] in FORCING_THREAT_TYPES:
+                    dst['forcing'].add(Threat(info,span,angle))
                 else:
-                    dst[level].add(Threat(match.group(), span, level, angle))
+                    dst['nforcing'].add(Threat(info,span,angle))    
 
-    def _get_threats(self, threat_patterns: dict):
-        threats = {}
-        for level,patts in threat_patterns.items():
-            threats[level] = []
-            self._get_threats_in_repr(self.board, patts, level, threats, angle = 0)
-            self._get_threats_in_repr(self.board_90, patts, level, threats, angle = 90)
-            self._get_threats_in_repr(self.board_45, patts, level, threats, angle = 45)
-            self._get_threats_in_repr(self.board_315, patts, level, threats, angle = 315)
+
+    def _get_threats(self, black : bool):
+        threats = self.b_threats if black else self.w_threats
+        # for level,patts in threat_patterns.items():
+        #     threats[level] = []
+        self._get_threats_in_repr(self.board, black, angle = 0)
+        self._get_threats_in_repr(self.board_90, black, angle = 90)
+        self._get_threats_in_repr(self.board_45, black, angle = 45)
+        self._get_threats_in_repr(self.board_315, black, angle = 315)
         return threats
 
     def print_boards(self):
@@ -354,13 +169,13 @@ class BoardState:
         pass
     
     def _get_line(self, pos:tuple) -> tuple:
-        extr = ((pos[0],0), (pos[1], self.size - 1))
+        extr = ((0,pos[0]), (self.size - 1, pos[1]))
         bounds = (cr_to_index(*extr[0], self.size), cr_to_index(*extr[1], self.size))
         return bounds, self.board[bounds[0] : bounds[1] + 1]
 
 
     def _get_line90(self, pos:tuple) -> tuple:
-        extr = ((0,pos[0]), (self.size - 1, pos[1]))
+        extr = ((pos[0],0), (pos[1],self.size - 1))
         bounds = (cr_to_index90(*extr[0], self.size), cr_to_index90(*extr[1], self.size))
         return bounds, self.board_90[bounds[0] : bounds[1] + 1]
 
@@ -401,3 +216,41 @@ class BoardState:
 
 if __name__ == '__main__':
     pass
+
+
+
+# span = match.span()
+# if offset != 0:      
+#     span = list(span)           
+#     span[0] += offset
+#     span[1] += offset
+#     span = tuple(span)                
+# if not isinstance(dst[level], set):
+#     dst[level].append(Threat(match.group(), span, level, angle))
+# else:
+#     dst[level].add(Threat(match.group(), span, level, angle))
+
+# w_t = self.b_winning_threats if black else self.w_winning_threats
+# f_t = self.b_forcing_threats if black else self.w_forcing_threats
+# nf_t = self.b_nforcing_threats if black else self.w_nforcing_threats
+
+# for lvl,patts in f_t.items():
+#     self._get_threats_in_repr(line, black, span[0], 0)
+#     self._get_threats_in_repr(line90, black, span90[0], 90)
+#     self._get_threats_in_repr(line45, black, span45[0], 45)
+#     self._get_threats_in_repr(line315, black, span315[0], 315)
+
+# for lvl,patts in nf_t.items():
+#     self._get_threats_in_repr(line, black, span[0], 0)
+#     self._get_threats_in_repr(line90, black, span90[0], 90)
+#     self._get_threats_in_repr(line45, black, span45[0], 45)
+#     self._get_threats_in_repr(line315, black, span315[0], 315)
+
+# self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
+# self.b_winning_threats = generic_to_black_threat(WINNING_THREAT)
+
+# self.w_forcing_threats = generic_to_white_threat(FORCING_THREATS)
+# self.b_forcing_threats = generic_to_black_threat(FORCING_THREATS)    
+
+# self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
+# self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   

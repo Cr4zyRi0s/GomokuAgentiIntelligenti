@@ -4,6 +4,9 @@ from players import AIPlayer, AIRandomPlayer, HumanPlayer
 import pygame
 import random
 
+from boardstate import get_index_transform_func
+from threats import Threat
+
 MOVE_TIME = 15
 
 def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
@@ -11,10 +14,11 @@ def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
     for lvl, ts in pthreats.items():    
         for t in ts:
             if lvl == 5:
-                gui.add_winning_streak_line(t.cells[0], t.cells[1])
+                trans_func = get_index_transform_func(t.angle)
+                gui.add_winning_streak_line(trans_func(t.span[0]), trans_func(t.span[1] - 1))
             else:
-                for s in t.get_open_slots():
-                    gui.add_threat_hint(*s,lvl - 2)
+                for s in t.get_open_slots():                    
+                    gui.add_threat_hint(*s,t.info['type'][0])
 
 
 def draw_threat_hints(game : Game, gui : GUIHandler):

@@ -1,5 +1,5 @@
 import random
-from gomoku import Game,is_valid_move
+from gomoku import is_valid_move
 
 def place_random_stones(board, n_stones : int) -> list:
     positions = []

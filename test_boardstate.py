@@ -1,4 +1,44 @@
 '''
+WINNING_THREAT = {
+ 5 : 
+ ['[0Y3]X{5}[0Y3]']
+}
+FORCING_THREATS = {
+    4 : [
+    #Open fours
+    '[0Y3]0X{4}0[0Y3]',
+    '[Y3]X{2}0X{2}0X{2}[Y3]',
+    '[Y3]X{3}0X0X{3}[Y3]',
+    #Simple fours
+    '[Y3]X{4}0[03Y]',
+    '[Y3]X{2}0X{2}[Y3]',
+    '[Y3]X0X{3}[Y3]',
+    '[Y3]X{3}0X[Y3]',
+    '[Y3]X{4}0X[Y3]',
+    '[03Y]0X{4}[3Y]'],
+    #Open threes    
+    3 : [
+    '[0Y3]0{2}X{3}0{2}[0Y3]',
+    '[0Y3]0X0X{2}0X0[0Y3]',
+    'X0X0X0X0X',
+    #Broken threes
+    '0X0X{2}0',
+    '0X{2}0X0',
+    '[Y3]0X{3}0{2}',
+    '0{2}X{3}0[Y3]'
+    ]
+}
+
+NON_FORCING_THREATS = {
+    3 : [
+        '[Y3]X{3}0{2}[0Y3]',
+        '[0Y3]0{2}X{3}[Y3]'
+        ],
+    2 : []
+}
+'''
+
+'''
 moves = [(i,1) for i in range(2,6)]
 for m in moves:
     state.make_move(m,True)

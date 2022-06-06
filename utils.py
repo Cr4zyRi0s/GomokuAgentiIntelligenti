@@ -1,5 +1,7 @@
 import numpy as np
 
+DEFAULT_BOARD_SIZE = 15
+
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]
 
@@ -37,33 +39,35 @@ def generic_to_black_threat(generic_threats : dict) -> dict:
     [pattern.replace('X','1').replace('Y','2') for pattern in v]
     for k,v in generic_threats.items()}
 
-def cr_to_index(c,r,size) -> int:
+def cr_to_index(c,r,size : int = DEFAULT_BOARD_SIZE) -> int:
     return r * (size + 2) + c + 1
-def cr_to_index90(c,r,size) -> int:
+def cr_to_index90(c,r,size : int = DEFAULT_BOARD_SIZE) -> int:
     return c * (size + 2) + r + 1
-def cr_to_index45(c,r,size) -> int:
+def cr_to_index45(c,r,size : int = DEFAULT_BOARD_SIZE) -> int:
     return (r + c) * (size + 2) + c + 1
-def cr_to_index315(c,r,size) -> int:
+def cr_to_index315(c,r,size : int = DEFAULT_BOARD_SIZE) -> int:
     return (r + size - c - 1) * (size + 2) + c + 1
 
-def index_to_cr(index,size) -> tuple:
+def index_to_cr(index,size : int = DEFAULT_BOARD_SIZE) -> tuple:
     r = index // (size + 2)
     c = index - r * (size + 2) - 1
     return c,r
-def index90_to_cr(index,size) -> tuple:
+def index90_to_cr(index,size : int = DEFAULT_BOARD_SIZE) -> tuple:
     c = index // (size + 2)
     r = index - c * (size + 2) - 1
     return c,r     
-def index45_to_cr(index,size)  -> tuple:
+def index45_to_cr(index,size : int = DEFAULT_BOARD_SIZE)  -> tuple:
     rc = index // (size + 2)
     c = index - rc * (size + 2) - 1
     r = rc - c
     return c,r 
-def index315_to_cr(index,size)  -> tuple:
+
+def index315_to_cr(index,size : int = DEFAULT_BOARD_SIZE)  -> tuple:
     rc = index // (size + 2)
     c = index - rc * (size + 2) - 1
     r = rc - size + c + 1
     return c,r
+
 
 def get_index_transform_func(angle : int):
     if angle == 0:
@@ -76,3 +80,6 @@ def get_index_transform_func(angle : int):
         return index315_to_cr
     else:
         raise Exception('Invalid angle value %d' % (angle))
+
+if __name__ == '__main__':
+    pass

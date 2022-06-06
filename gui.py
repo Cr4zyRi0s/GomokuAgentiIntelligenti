@@ -156,9 +156,6 @@ class GUIHandler:
         for col, row in zip(*np.where(self.game.board_state.grid == 2)):
             self._draw_stone(col,row,WHITE)
 
-        for lvl,hints in self.threat_hints.items():
-            for h in hints:
-                self._draw_threat_hint(*h, lvl)
 
         for line in self.winning_streak_lines:
             pygame.draw.line(self.screen,
@@ -222,6 +219,10 @@ class GUIHandler:
                 txt = self.font.render(turn_msg, True, BLACK)
                 self.screen.blit(txt, TURN_POS)
 
+        
+        for lvl,hints in self.threat_hints.items():
+            for h in hints:
+                self._draw_threat_hint(*h, lvl)
         pygame.display.flip()
 
     def clear_screen(self):

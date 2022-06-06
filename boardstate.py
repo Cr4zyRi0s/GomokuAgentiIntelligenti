@@ -47,6 +47,7 @@ class BoardState:
         self.board_315 = ''.join([str(el) for el in board_315.flatten()])
 
         b_threats_info, w_threats_info = load_precomputed_threats()
+
         self.b_threats_info = b_threats_info
         self.w_threats_info = w_threats_info
         self.w_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
@@ -66,21 +67,22 @@ class BoardState:
         self._update_threats((c,r), is_black)
 
     def get_all_threats(self, black : bool) -> tuple:         
-        win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
-        force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
-        nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
+        raise NotImplementedError()
+        # win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
+        # force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
+        # nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
 
-        #TEMPORANEO
-        if black:
-            self.b_winning_threats = win_threats
-            self.b_forcing_threats = force_threats
-            self.b_nforcing_threats = nforce_threats
-        else:
-            self.w_winning_threats = win_threats
-            self.w_forcing_threats = force_threats
-            self.w_nforcing_threats = nforce_threats
+        # #TEMPORANEO
+        # if black:
+        #     self.b_winning_threats = win_threats
+        #     self.b_forcing_threats = force_threats
+        #     self.b_nforcing_threats = nforce_threats
+        # else:
+        #     self.w_winning_threats = win_threats
+        #     self.w_forcing_threats = force_threats
+        #     self.w_nforcing_threats = nforce_threats
 
-        return win_threats, force_threats, nforce_threats
+        # return win_threats, force_threats, nforce_threats
 
     def _get_repr_from_angle(self, angle : int) -> str:
         if angle == 0:
@@ -99,11 +101,10 @@ class BoardState:
         to_remove = set()
         for type, ts in pthreats.items():
             for t in ts:
-                #repr = self._get_repr_from_angle(t.angle)
                 s = spans[t.angle]
-                if t.span[0] >= s[0] or t.span[0] < s[1]:
+                if t.span[0] >= s[0] and t.span[0] < s[1]:
                     to_remove.add(t)
-                if t.span[1] > s[0] or t.span[1] <= s[1]:
+                if t.span[1] > s[0] and t.span[1] <= s[1]:
                     to_remove.add(t)
 
             ts.difference_update(to_remove)                                                                                
@@ -112,8 +113,8 @@ class BoardState:
         #check new threats in intersecting lines
         span, line = self._get_line(last_move)
         span90, line90 = self._get_line90(last_move)
-        span45, line45 = self._get_line_45(last_move)
-        span315, line315 = self._get_line_315(last_move)
+        span45, line45 = self._get_line45(last_move)
+        span315, line315 = self._get_line315(last_move)
 
         spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
 
@@ -131,18 +132,22 @@ class BoardState:
     def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
         rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
         t_info = self.b_threats_info if black else self.w_threats_info
-        #t_dict = self.b_threats if black else self.w_threats
         for match in re.finditer(rgx, repr):
-            len = match.endpos - match.pos
-            info = t_info[len].get(match.group())
-            if info is not None:
+            group = match.group()
+            l = len(group)
+            # if group in t_info[l]:
+            if group in t_info:
+                # info = t_info[l][group]
+                info = t_info[group]
                 span = (match.pos + offset, match.endpos + offset)
                 if info['type'] in WINNING_THREAT_TYPES:
-                    dst['winning'].add(Threat(info,span,angle))
+                    dst['winning'].add(Threat(group,info,span,angle))
                 elif info['type'] in FORCING_THREAT_TYPES:
-                    dst['forcing'].add(Threat(info,span,angle))
+                    dst['forcing'].add(Threat(group,info,span,angle))
                 else:
-                    dst['nforcing'].add(Threat(info,span,angle))    
+                    dst['nforcing'].add(Threat(group,info,span,angle))    
+            else:
+                print('%s not found as a threat sequence' % group)
 
 
     def _get_threats(self, black : bool):
@@ -165,21 +170,17 @@ class BoardState:
         b = np.array([list(self.board_315[i : i + self.size + 2]) for i in range(0,(self.size + 2) * (2 * self.size - 1), self.size + 2)])
         print(b)
 
-    def deepcopy(self):
-        pass
-    
     def _get_line(self, pos:tuple) -> tuple:
-        extr = ((0,pos[0]), (self.size - 1, pos[1]))
+        extr = ((0,pos[1]), (self.size - 1,pos[1]))
         bounds = (cr_to_index(*extr[0], self.size), cr_to_index(*extr[1], self.size))
         return bounds, self.board[bounds[0] : bounds[1] + 1]
 
-
     def _get_line90(self, pos:tuple) -> tuple:
-        extr = ((pos[0],0), (pos[1],self.size - 1))
+        extr = ((pos[0],0), (pos[0],self.size - 1))
         bounds = (cr_to_index90(*extr[0], self.size), cr_to_index90(*extr[1], self.size))
         return bounds, self.board_90[bounds[0] : bounds[1] + 1]
 
-    def _get_line_45(self, pos : tuple) -> tuple:
+    def _get_line45(self, pos : tuple) -> tuple:
         c,r = pos
 
         if r + c < self.size:
@@ -188,24 +189,28 @@ class BoardState:
             extr = [(self.size - 1, 0),(0, self.size - 1)]            
         else:
             extr = ((self.size - 1, c + r - self.size + 1),(c + r - self.size + 1, self.size - 1))
- 
+
         bounds = (cr_to_index45(*extr[1],self.size), cr_to_index45(*extr[0],self.size))
         return bounds, self.board_45[bounds[0] : bounds[1] + 1]      
 
-    def _get_line_315(self, pos : tuple) -> tuple:
-        c,r = pos
-        
+    def _get_line315(self, pos : tuple) -> tuple:
+        c,r = pos        
         if c < r:
             offset = c + self.size - 1 - r
-            extr = ((self.size - 1 - offset, 0),(self.size - 1, offset))            
+            extr = ((0, self.size - 1 - offset),(offset, self.size - 1))            
         elif r == c:
             extr = [(0, 0),(self.size - 1, self.size - 1)]            
         else:
             offset = r + self.size - 1 - c
-            extr = ((0,  - offset + self.size - 1),( offset, self.size - 1))
-             
+            extr = ((self.size - 1 - offset, 0),(self.size - 1, offset))
+
+        #print('extr: ', extr)                
         bounds = (cr_to_index315(*extr[0], self.size), cr_to_index315(*extr[1], self.size))
         return bounds, self.board_315[bounds[0] : bounds[1] + 1]    
+
+
+    def deepcopy(self):
+        pass   
 
     def _update_boards(self, move, stone):
         c,r = move
@@ -215,8 +220,22 @@ class BoardState:
         self.board_315 = replace_char(self.board_315, cr_to_index315(c,r, self.size), stone)
 
 if __name__ == '__main__':
-    pass
+    bstate = BoardState(10)
+    #moves = [(i,i) for i in range(10)]
+    moves = [(i + 2,i)  for i in range(5)]
 
+    for m in moves:
+        bstate.make_move(m, True if m[0] % 2 == 0 else False)
+
+    print(bstate.board_315)
+    for i in range(len(moves)):
+        print(moves[i])
+        print(bstate._get_line315(moves[i]))
+
+    # for type, ts in bstate.b_threats.items():
+    #     print(type,'\n----------------')
+    #     for t in ts:
+    #         print(t)
 
 
 # span = match.span()

@@ -117,20 +117,21 @@ def load_precomputed_threats(filename = 'threat_data.json'):
     b_threats = {}
     w_threats = {}
     max_l = max([int(k) for k in l_threats.keys()])
-    for l in range(5,max_l + 1):
-        b_threats[l] = {}
-        w_threats[l] = {}
-        for seq,info in l_threats[str(l)].items():
+    for l in l_threats.keys():
+        i_l = int(l)
+        # b_threats[i_l] = {}
+        # w_threats[i_l] = {}
+        for seq,info in l_threats[l].items():
             type = info['type']
             p_moves = info['p_moves']
             b_def = info['b_def']
 
-            b_threats[l][seq] = {
+            b_threats[seq] = {
                 'type' : (int(type[0]), int(type[1])),
                 'p_moves' : [int(m) for m in p_moves],
                 'b_def' : [int(d) for d in b_def]
             }
-            w_threats[l][seq.replace('1','2')] = {
+            w_threats[seq.replace('1','2')] = {
                 'type' : (int(type[0]), int(type[1])),
                 'p_moves' : [int(m) for m in p_moves],
                 'b_def' : [int(d) for d in b_def]
@@ -147,18 +148,20 @@ def load_precomputed_threats(filename = 'threat_data.json'):
 #-----------------------------------------------------------------------------------------
 
 class Threat:
-    def __init__(self, info : tuple, span : tuple, angle:int):
+    def __init__(self, group : str, info : tuple, span : tuple, angle:int):
+        self.group = group
         self.info = info
         self.span = span
-        self.angle = angle
+        self.angle = angle    
+        self.t_func = get_index_transform_func(angle)    
         # t_func = get_index_transform_func(angle)
         # self.cells = [t_func(index, board_size) for index in range(span[0], span[1])]
 
     def get_open_slots(self) -> set:
-        return {m + self.span[0] for m in self.info['p_moves']}
+        return {self.t_func(m + self.span[0]) for m in self.info['p_moves']}
 
     def get_counter_moves(self) -> set:
-        return set(self.info['b_def'])
+        return {self.t_func(m + self.span[0]) for m in self.info['b_def']}
         
     def __hash__(self) -> int:
         # return 23 * self.cells[0][0] + 29 * self.cells[0][1] + 71 * self.cells[1][0] + 73 * self.cells[1][1]
@@ -173,14 +176,16 @@ class Threat:
         return False
 
     def __str__(self) -> str:
-        return '(Threat / group = \'%s\', level = %d, span = (%d, %d))' % (self.group, self.level, self.span[0], self.span[1])
-
-
+        return '(Threat / group = \'%s\', type = %s, span = (%d, %d), angle = %d°)' % (
+            self.group,
+            str(self.info['type']),
+            self.span[0],
+            self.span[1],
+            self.angle
+            )
 
 if __name__ == '__main__':
     t = time.time()
     b_threats, w_threats = load_precomputed_threats()
-    print(w_threats[5])
+    print(w_threats[11])
     print('elapsed time:', round(time.time() - t,4))
-
-

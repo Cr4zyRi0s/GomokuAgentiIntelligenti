@@ -1,8 +1,9 @@
+from io import DEFAULT_BUFFER_SIZE
 from operator import xor
 import numpy as np
 
 from boardstate import BoardState
-
+from utils import DEFAULT_BOARD_SIZE
 
 def check_line(board, last_move, last_player, direction):
     c,r = last_move
@@ -73,7 +74,7 @@ def is_valid_move(col : int, row : int, board : np.array) -> bool:
 
 
 class Game:
-    def __init__(self, size, whitePlayer, blackPlayer):
+    def __init__(self, whitePlayer , blackPlayer, size : int = DEFAULT_BOARD_SIZE ):
         self.board_state = BoardState(size) 
         self.size = size
 
@@ -196,7 +197,6 @@ class Game:
         if self.place_stone(move,self.black_turn):
             if check_winning_condition(self.board_state.grid, move, player.color):
                 self.winning_player = player.color
-                return True
             self.new_turn()
             if self.gui is not None:
                 self.gui.draw()

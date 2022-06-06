@@ -21,10 +21,12 @@ class Player:
         self.select_color = False      
 
     def can_play(self):
+        if self.game.winning_player is not None:
+            return False
         if self.color == "black" and self.game.black_turn:
             return True
         elif self.color == "white" and not self.game.black_turn:
-            return True
+            return True            
         return False
 
     def swap2_first_place_stones(self):    

@@ -232,10 +232,6 @@ if __name__ == '__main__':
         print(moves[i])
         print(bstate._get_line315(moves[i]))
 
-    # for type, ts in bstate.b_threats.items():
-    #     print(type,'\n----------------')
-    #     for t in ts:
-    #         print(t)
 
 
 # span = match.span()

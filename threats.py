@@ -23,7 +23,7 @@ def generate_all_sequences_of_len(length : int) -> set:
         #elif len(re.findall('10{2,}1',s)) > 0:
         #    to_remove.add(s)
         
-        elif length > 5 and s.count('1') >= length - 1:
+        elif length > 6 and s.count('1') >= length - 1:
             to_remove.add(s)
 
     all_seqs.difference_update(to_remove)
@@ -110,6 +110,10 @@ def generate_dependency_graph(threats : dict, max_seq_len : int = 7) -> dict:
         graphs[l] = curr_g                
     return graphs        
 
+def store_precomputed_threats(threats, filename = 'threat_data.json'):
+    with open('threat_data.json', 'w') as file:
+        json.dump(threats, file)
+
 def load_precomputed_threats(filename = 'threat_data.json'):
     with open('threat_data.json', 'r') as file:
         l_threats = json.load(file)
@@ -186,6 +190,9 @@ class Threat:
 
 if __name__ == '__main__':
     t = time.time()
+    threats = precompute_threats(15)
+    store_precomputed_threats(threats)
     b_threats, w_threats = load_precomputed_threats()
-    print(w_threats[11])
+    #print(b_threats)
+    print(b_threats['011111'])
     print('elapsed time:', round(time.time() - t,4))

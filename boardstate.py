@@ -139,7 +139,7 @@ class BoardState:
             if group in t_info:
                 # info = t_info[l][group]
                 info = t_info[group]
-                span = (match.pos + offset, match.endpos + offset)
+                span = (match.span()[0] + offset, match.span()[1] + offset)
                 if info['type'] in WINNING_THREAT_TYPES:
                     dst['winning'].add(Threat(group,info,span,angle))
                 elif info['type'] in FORCING_THREAT_TYPES:

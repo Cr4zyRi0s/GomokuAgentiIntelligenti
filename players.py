@@ -53,11 +53,9 @@ class AIPlayer(Player):
         pass
     def swap2_select_color(self):
         pass
-
     def play_turn(self):
         if not self.can_play():
             return
-
         
 class AIRandomPlayer(AIPlayer):
     def swap2_first_place_stones(self):

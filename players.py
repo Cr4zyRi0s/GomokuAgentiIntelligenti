@@ -1,5 +1,6 @@
 import random
 from gomoku import is_valid_move
+from minimax import gomoku_get_best_move
 
 def place_random_stones(board, n_stones : int) -> list:
     positions = []
@@ -56,6 +57,12 @@ class AIPlayer(Player):
     def play_turn(self):
         if not self.can_play():
             return
+
+        maximize = True if self.color == 'black' else False
+        best_move = gomoku_get_best_move(self.game.board_state, maximize)
+        if not self.game.turn(self,best_move):
+            raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
+
         
 class AIRandomPlayer(AIPlayer):
     def swap2_first_place_stones(self):

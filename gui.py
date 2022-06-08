@@ -99,10 +99,14 @@ class GUIHandler:
         self.reset_threat_hints()
         self.winning_streak_lines = []
         self.on_click_callbacks = []
+        self.on_right_click_callbacks = []
         
     def add_on_click_callback(self, func):
         self.on_click_callbacks.append(func)
-    
+
+    def add_on_right_click_callback(self,func):
+        self.on_right_click_callbacks.append(func)
+
     def reset_threat_hints(self):
         self.threat_hints = {i : [] for i in range(1,6)}
 
@@ -131,7 +135,12 @@ class GUIHandler:
             c, r = xy_to_colrow(x,y,self.game.size)                 
             for p in self.humanPlayers:
                 p.on_click_grid(x,y,c,r)
-                    
+
+    def handle_right_click(self):
+        x, y = pygame.mouse.get_pos()
+        for cback in self.on_right_click_callbacks:
+            cback(x,y)
+
     def init_pygame(self):
         pygame.init()
         screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_WIDTH))
@@ -244,6 +253,9 @@ class GUIHandler:
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
-                self.handle_click()
+                if event.button == 1:
+                    self.handle_click()
+                elif event.button == 3:
+                    self.handle_right_click()
             if event.type == pygame.QUIT:
                 sys.exit()

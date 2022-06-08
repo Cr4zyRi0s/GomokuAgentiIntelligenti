@@ -203,6 +203,13 @@ class Game:
             return True
         return False
 
+    def revert_turn(self):
+        self.new_turn()
+        self.board_state.unmake_last_move()
+        self.winning_player = None
+        if self.gui is not None:
+            self.gui.draw()      
+
     def new_turn(self):
         self.black_turn = not self.black_turn
         for cback in self.on_turn_change_callbacks:

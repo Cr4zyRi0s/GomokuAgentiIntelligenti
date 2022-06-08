@@ -57,7 +57,7 @@ def print_lines_of_last_moves(game : Game):
         print('-------------------\n')    
 
 if __name__ == "__main__":
-    ai_white = AIRandomPlayer()
+    ai_white = AIPlayer()
     #ai_black = AIPlayer()
     human  = HumanPlayer()
     game = Game(whitePlayer=ai_white, blackPlayer=human)    
@@ -69,24 +69,21 @@ if __name__ == "__main__":
     gui.clear_screen()
     gui.draw()
 
-    update_threat_hints = lambda: draw_threat_hints(game,gui) 
-    game.on_turn_change_callbacks.append(update_threat_hints)
-    
-    ai_white_play = lambda: ai_white.play_turn()
-    game.on_turn_change_callbacks.append(ai_white_play)
+    ai_white_play = lambda x,y: ai_white.play_turn()
+    gui.add_on_click_callback(ai_white_play)
+    gui.add_on_click_callback(update_last_move)
 
-    # print_threats = lambda: print_threats_of_player(game,True)
-    # game.on_turn_change_callbacks.append(print_threats)
+    revert_turn = lambda x,y : game.revert_turn()
+    gui.add_on_right_click_callback(revert_turn)
 
-    gui.on_click_callbacks.append(update_last_move)
-
+    update_threat_hints = lambda: draw_threat_hints(game,gui)
+    print_threats = lambda : print_threats_of_player(game,True)
     pllm = lambda : print_lines_of_last_moves(game)
-    game.on_turn_change_callbacks.append(pllm)
 
-    #game.swap2_init()
-    #one_turn_ahead = lambda x,y : ai_white.play_turn() if not game.black_turn else ai_black.play_turn()
-    #gui.add_on_click_callback(one_turn_ahead)
-    timer = 0
+    game.on_turn_change_callbacks.append(print_threats)
+    game.on_turn_change_callbacks.append(update_threat_hints)
+    #game.on_turn_change_callbacks.append(pllm)
+
     while True:    
         gui.update()
         pygame.time.wait(100)

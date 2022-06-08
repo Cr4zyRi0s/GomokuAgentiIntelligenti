@@ -52,6 +52,7 @@ class BoardState:
         self.w_threats_info = w_threats_info
         self.w_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
         self.b_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
+        self.threat_updates = {}
     
     def make_move(self,move,is_black):
         self.grid[move[0], move[1]] = 1 if is_black else 2 
@@ -62,9 +63,23 @@ class BoardState:
         
     def unmake_last_move(self):
         c,r,is_black = self.moves.pop()
+        print(c,r,is_black)
         self.grid[c, r] = 0
         self._update_boards((c,r), '0')
-        self._update_threats((c,r), is_black)
+        #self._update_threats((c,r), is_black)
+        updt = self.threat_updates[str((c,r))]
+        print(updt)
+
+        for add in updt['white']['added']:
+            self.w_threats[add[1]].remove(add[0])
+        for rem in updt['white']['removed']:
+            self.w_threats[rem[1]].add(rem[0])
+
+        for add in updt['black']['added']:
+            self.b_threats[add[1]].remove(add[0])
+        for rem in updt['black']['removed']:
+            self.b_threats[rem[1]].add(rem[0])
+
 
     def get_all_threats(self, black : bool) -> tuple:         
         raise NotImplementedError()
@@ -105,9 +120,9 @@ class BoardState:
                 if t.span[0] >= s[0] and t.span[0] < s[1]:
                     to_remove.add(t)
                 if t.span[1] > s[0] and t.span[1] <= s[1]:
-                    to_remove.add(t)
-
-            ts.difference_update(to_remove)                                                                                
+                    to_remove.add(t)                    
+            ts.difference_update(to_remove)                                                                             
+        return {(t,type) for t in to_remove}
 
     def _update_threats(self, last_move : tuple, black : bool):                
         #check new threats in intersecting lines
@@ -117,38 +132,57 @@ class BoardState:
         span315, line315 = self._get_line315(last_move)
 
         spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
+        self.threat_updates[str(last_move)] = {
+            'black': {
+                'added' : set(),
+                'removed' : self._prune_old_threats(spans, True)
+            },  
+            'white' : {
+                'added' : set(),
+                'removed' :self._prune_old_threats(spans, False) 
+            }
+        }
 
-        self._prune_old_threats(spans, True)
-        self._prune_old_threats(spans, False)   
+        # self._prune_old_threats(spans, True)
+        # self._prune_old_threats(spans, False)   
         
         ts = self.b_threats if black else self.w_threats
 
-        self._get_threats_in_repr(ts, line, black, span[0], 0)
-        self._get_threats_in_repr(ts, line90, black, span90[0], 90)
-        self._get_threats_in_repr(ts, line45, black, span45[0], 45)
-        self._get_threats_in_repr(ts, line315, black, span315[0], 315)
+        added_threats = set()
+        added_threats.update(self._get_threats_in_repr(ts, line, black, span[0], 0))
+        added_threats.update(self._get_threats_in_repr(ts, line90, black, span90[0], 90))
+        added_threats.update(self._get_threats_in_repr(ts, line45, black, span45[0], 45))
+        added_threats.update(self._get_threats_in_repr(ts, line315, black, span315[0], 315))
 
+        self.threat_updates[str(last_move)]['black' if black else 'white']['added'] = added_threats
 
     def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
         rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
         t_info = self.b_threats_info if black else self.w_threats_info
+        added = set()
         for match in re.finditer(rgx, repr):
             group = match.group()
             l = len(group)
             # if group in t_info[l]:
             if group in t_info:
                 # info = t_info[l][group]
-                info = t_info[group]
+                info = t_info[group]                
                 span = (match.span()[0] + offset, match.span()[1] + offset)
-                if info['type'] in WINNING_THREAT_TYPES:
-                    dst['winning'].add(Threat(group,info,span,angle))
-                elif info['type'] in FORCING_THREAT_TYPES:
-                    dst['forcing'].add(Threat(group,info,span,angle))
-                else:
-                    dst['nforcing'].add(Threat(group,info,span,angle))    
-            else:
-                print('%s not found as a threat sequence' % group)
+                threat = Threat(group,info,span,angle)
+                #added.add((threat))
 
+                if info['type'] in WINNING_THREAT_TYPES:
+                    dst['winning'].add(threat)
+                    added.add((threat, 'winning'))
+                elif info['type'] in FORCING_THREAT_TYPES:
+                    dst['forcing'].add(threat)
+                    added.add((threat, 'forcing'))
+                else:
+                    dst['nforcing'].add(threat)    
+                    added.add((threat, 'nforcing'))
+            # else:
+            #     print('%s not found as a threat sequence' % group)
+        return added
 
     def _get_threats(self, black : bool):
         threats = self.b_threats if black else self.w_threats

@@ -193,6 +193,4 @@ if __name__ == '__main__':
     threats = precompute_threats(15)
     store_precomputed_threats(threats)
     b_threats, w_threats = load_precomputed_threats()
-    #print(b_threats)
-    print(b_threats['011111'])
     print('elapsed time:', round(time.time() - t,4))

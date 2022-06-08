@@ -30,20 +30,26 @@ def check_neighbours(board:np.array, pos: tuple):
 
 def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
     children = []
-    nf_t, f_t,_ = state.get_all_threats(not maximize)    
     n_threats = 0
+    f_t, opp_f_t = state.b_threats['forcing'],state.w_threats['forcing'] if maximize else state.w_threats['forcing'],state.b_threats['forcing']
+    nf_t, opp_nf_t = state.b_threats['nforcing'],state.w_threats['nforcing'] if maximize else state.w_threats['nforcing'],state.b_threats['nforcing']
 
-    for lvl, ts in nf_t:
-        for t in ts:
-            for slot in t.get_open_slots():
-                children.append(slot, maximize)
-            n_threats += 1
-    
-    for lvl,ts in f_t:
-        for t in ts:
-            for slot in t.get_open_slots():
-                children.append(slot, maximize)
-            n_threats += 1
+    for ft in opp_f_t:
+        children.append(ft.get_counter_moves())
+        n_threats += 1
+
+    for ft in f_t:
+        children.append(ft.get_open_slots())
+        n_threats += 1
+
+    for nft in nf_t:
+        children.append(nft.get_open_slots())
+        n_threats += 1
+
+    for nft in opp_nf_t:
+        children.append(nft.get_counter_moves())
+        n_threats += 1
+
 
     #If no threats are found just return one of the cells with an adjacent stone
     if n_threats == 0:
@@ -125,9 +131,10 @@ def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.
 def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> tuple:
     best = None
     best_score = -math.inf if maximize else math.inf
-    for child in gomoku_get_state_children(state):
+    for child in gomoku_get_state_children(state, maximize):
         state.make_move(child[0], maximize)
         score = minimax(state,DEFAULT_SEARCH_DEPTH,maximize)
+        state.unmake_last_move()
         if maximize:
             if score > best_score:
                 best_score = score

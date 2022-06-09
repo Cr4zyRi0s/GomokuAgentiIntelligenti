@@ -1,5 +1,5 @@
 import random
-from gomoku import is_valid_move
+from utils import is_valid_move
 from minimax import gomoku_get_best_move
 
 def place_random_stones(board, n_stones : int) -> list:

@@ -81,5 +81,29 @@ def get_index_transform_func(angle : int):
     else:
         raise Exception('Invalid angle value %d' % (angle))
 
+
+
+def no_moves_possible(board : np.array) -> bool:
+    n_avail = np.count_nonzero(board)
+    return n_avail >= board.shape[0] * board.shape[1]
+
+def is_valid_move(col : int, row : int, board : np.array) -> bool:
+    """Check if placing a stone at (col, row) is valid on board
+    Args:
+        col (int): column number
+        row (int): row number
+        board (object): board grid (size * size matrix)
+    Returns:
+        boolean: True if move is valid, False otherewise
+    """
+    # TODO: check for ko situation (infinite back and forth)
+    if col < 0 or col >= board.shape[0]:
+        return False
+    if row < 0 or row >= board.shape[0]:
+        return False    
+    return board[col, row] == 0
+
 if __name__ == '__main__':
     pass
+
+

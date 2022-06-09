@@ -3,82 +3,20 @@ from operator import xor
 import numpy as np
 
 from boardstate import BoardState
-from utils import DEFAULT_BOARD_SIZE
-
-def check_line(board, last_move, last_player, direction):
-    c,r = last_move
-    r1 = r
-    c1 = c
-    stone = 1 if last_player == "black" else 2
-    count = 1
-    while board[c1,r1] == stone:
-        r1 -= direction[0]
-        c1 -= direction[1]
-
-        if r1 < 0 or r1 >= board.shape[1]:
-            break
-        if c1 < 0 or c1 >= board.shape[0]:
-            break    
-        
-        if board[c1,r1] == stone:            
-            count += 1
-
-    r1 = r
-    c1 = c
-    while board[c1,r1] == stone:
-        r1 += direction[0]
-        c1 += direction[1]
-
-        if r1 < 0 or r1 >= board.shape[1]:
-            break
-        if c1 < 0 or c1 >= board.shape[0]:
-            break    
-
-        if board[c1,r1] == stone:
-            count += 1
-    
-    return count
-
-def check_winning_condition(board, last_move, last_player):
-    count_hor = check_line(board, last_move,last_player, (0,1))
-    count_ver = check_line(board, last_move,last_player, (1,0))
-    count_diag = check_line(board, last_move,last_player, (1,1))
-    count_diag1 = check_line(board, last_move,last_player, (-1,1))
-
-    #print(count_hor, count_ver, count_diag, count_diag1)
-
-    if count_hor == 5 or count_ver == 5 or count_diag == 5 or count_diag1 == 5:
-        return True
-    
-    return False
-
-def no_moves_possible(board : np.array) -> bool:
-    n_avail = np.count_nonzero(board)
-    return n_avail > 0
-
-def is_valid_move(col : int, row : int, board : np.array) -> bool:
-    """Check if placing a stone at (col, row) is valid on board
-    Args:
-        col (int): column number
-        row (int): row number
-        board (object): board grid (size * size matrix)
-    Returns:
-        boolean: True if move is valid, False otherewise
-    """
-    # TODO: check for ko situation (infinite back and forth)
-    if col < 0 or col >= board.shape[0]:
-        return False
-    if row < 0 or row >= board.shape[0]:
-        return False    
-    return board[col, row] == 0
-
+from utils import DEFAULT_BOARD_SIZE,is_valid_move
+from players import Player
 
 class Game:
-    def __init__(self, whitePlayer , blackPlayer, size : int = DEFAULT_BOARD_SIZE ):
+    def __init__(self, 
+                whitePlayer : Player,
+                blackPlayer : Player,
+                size : int = DEFAULT_BOARD_SIZE):
+                
         self.board_state = BoardState(size) 
         self.size = size
 
         self.on_turn_change_callbacks = []
+        self.on_game_end_callbacks = []
 
         self.black_turn = True          
         self.winning_player = None        
@@ -98,6 +36,12 @@ class Game:
         "accept_or_place" : False ,
         "second_placement" : False,
         "select_color" : False}
+
+    def add_turn_change_callback(self, func):
+        self.on_turn_change_callbacks.append(func)
+    
+    def add_game_end_callback(self, func):
+        self.on_game_end_callbacks.append(func)
 
     def skip_swap2(self):
         self.swap2_phase = False
@@ -195,7 +139,8 @@ class Game:
             return False
 
         if self.place_stone(move,self.black_turn):
-            if check_winning_condition(self.board_state.grid, move, player.color):
+            #if check_winning_condition(self.board_state.grid, move, player.color):
+            if check_winning_condition(self):
                 self.winning_player = player.color
             self.new_turn()
             if self.gui is not None:
@@ -214,4 +159,55 @@ class Game:
         self.black_turn = not self.black_turn
         for cback in self.on_turn_change_callbacks:
             cback()     
+
+def check_winning_condition(game : Game):
+    if len(game.board_state.b_threats['winning']) > 0 or len(game.board_state.w_threats['winning']) > 0:
+        return True
+    return False
+
+
+
+# def check_line(board, last_move, last_player, direction):
+#     c,r = last_move
+#     r1 = r
+#     c1 = c
+#     stone = 1 if last_player == "black" else 2
+#     count = 1
+#     while board[c1,r1] == stone:
+#         r1 -= direction[0]
+#         c1 -= direction[1]
+
+#         if r1 < 0 or r1 >= board.shape[1]:
+#             break
+#         if c1 < 0 or c1 >= board.shape[0]:
+#             break    
+        
+#         if board[c1,r1] == stone:            
+#             count += 1
+
+#     r1 = r
+#     c1 = c
+#     while board[c1,r1] == stone:
+#         r1 += direction[0]
+#         c1 += direction[1]
+
+#         if r1 < 0 or r1 >= board.shape[1]:
+#             break
+#         if c1 < 0 or c1 >= board.shape[0]:
+#             break    
+
+#         if board[c1,r1] == stone:
+#             count += 1
     
+#     return count
+
+# def check_winning_condition(board, last_move, last_player):
+#     count_hor = check_line(board, last_move,last_player, (0,1))
+#     count_ver = check_line(board, last_move,last_player, (1,0))
+#     count_diag = check_line(board, last_move,last_player, (1,1))
+#     count_diag1 = check_line(board, last_move,last_player, (-1,1))
+
+#     if count_hor == 5 or count_ver == 5 or count_diag == 5 or count_diag1 == 5:
+#         return True
+    
+#     return False

@@ -1,12 +1,11 @@
-import json
+from ast import expr_context
+from shutil import ExecError
 import numpy as np
 import re
-import time
 
 from utils import *
 
-from threats import load_precomputed_threats
-from threats import Threat
+from threats import Threat, load_precomputed_threats
 
 BLACK_SEQUENCE_RGX = '[01]{5,}'
 WHITE_SEQUENCE_RGX = '[02]{5,}'
@@ -17,6 +16,17 @@ NON_FORCING_THREAT_TYPES = [(3,1)]
 for i in range(1,3):
     NON_FORCING_THREAT_TYPES.extend([(i,j) for j in range(1, 6 - i + 1)])
 
+def check_correctness(threat : Threat, bucket : str):
+    type = threat.info['type']
+    if type in WINNING_THREAT_TYPES:
+        if bucket != 'winning':
+            raise Exception('wrong threat identification (%s != %s)' % (bucket,'winning'))
+    elif type in FORCING_THREAT_TYPES:
+        if bucket != 'forcing':
+            raise Exception('wrong threat identification (%s != %s)' % (bucket,'forcing'))
+    else:
+        if bucket != 'nforcing':
+            raise Exception('wrong threat identification (%s != %s)' % (bucket,'nforcing'))
 
 #-----------------------------------------------------------------------------------------
 #////////////////////////////////////////////////////////////////////////////////////////
@@ -62,42 +72,32 @@ class BoardState:
         self.moves.append((*move,is_black))
         
     def unmake_last_move(self):
-        c,r,is_black = self.moves.pop()
-        print(c,r,is_black)
+        c,r,_ = self.moves.pop()
+
         self.grid[c, r] = 0
         self._update_boards((c,r), '0')
-        #self._update_threats((c,r), is_black)
         updt = self.threat_updates[str((c,r))]
-        print(updt)
 
-        for add in updt['white']['added']:
-            self.w_threats[add[1]].remove(add[0])
-        for rem in updt['white']['removed']:
-            self.w_threats[rem[1]].add(rem[0])
+        #print(c,r,is_black)
+        #print(updt)
+        try:
+            for add in updt['white']['added']:
+                self.w_threats[add[1]].remove(add[0])
+            for rem in updt['white']['removed']:
+                self.w_threats[rem[1]].add(rem[0])
+        except KeyError:        
+            pass
 
-        for add in updt['black']['added']:
-            self.b_threats[add[1]].remove(add[0])
-        for rem in updt['black']['removed']:
-            self.b_threats[rem[1]].add(rem[0])
-
+        try:
+            for add in updt['black']['added']:
+                self.b_threats[add[1]].remove(add[0])
+            for rem in updt['black']['removed']:
+                self.b_threats[rem[1]].add(rem[0])
+        except KeyError:
+            pass
 
     def get_all_threats(self, black : bool) -> tuple:         
         raise NotImplementedError()
-        # win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
-        # force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
-        # nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
-
-        # #TEMPORANEO
-        # if black:
-        #     self.b_winning_threats = win_threats
-        #     self.b_forcing_threats = force_threats
-        #     self.b_nforcing_threats = nforce_threats
-        # else:
-        #     self.w_winning_threats = win_threats
-        #     self.w_forcing_threats = force_threats
-        #     self.w_nforcing_threats = nforce_threats
-
-        # return win_threats, force_threats, nforce_threats
 
     def _get_repr_from_angle(self, angle : int) -> str:
         if angle == 0:
@@ -114,6 +114,7 @@ class BoardState:
     def _prune_old_threats(self, spans : tuple, black : bool):
         pthreats = self.b_threats if black else self.w_threats
         to_remove = set()
+        removed = set()
         for type, ts in pthreats.items():
             for t in ts:
                 s = spans[t.angle]
@@ -121,8 +122,10 @@ class BoardState:
                     to_remove.add(t)
                 if t.span[1] > s[0] and t.span[1] <= s[1]:
                     to_remove.add(t)                    
-            ts.difference_update(to_remove)                                                                             
-        return {(t,type) for t in to_remove}
+            ts.difference_update(to_remove)
+            removed.update([(tr,type) for tr in to_remove])   
+        
+        return removed
 
     def _update_threats(self, last_move : tuple, black : bool):                
         #check new threats in intersecting lines
@@ -182,6 +185,8 @@ class BoardState:
                     added.add((threat, 'nforcing'))
             # else:
             #     print('%s not found as a threat sequence' % group)
+        for add in added:
+            check_correctness(add[0], add[1])
         return added
 
     def _get_threats(self, black : bool):
@@ -255,7 +260,6 @@ class BoardState:
 
 if __name__ == '__main__':
     bstate = BoardState(10)
-    #moves = [(i,i) for i in range(10)]
     moves = [(i + 2,i)  for i in range(5)]
 
     for m in moves:
@@ -303,3 +307,19 @@ if __name__ == '__main__':
 
 # self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
 # self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   
+
+        # win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
+        # force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
+        # nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
+
+        # #TEMPORANEO
+        # if black:
+        #     self.b_winning_threats = win_threats
+        #     self.b_forcing_threats = force_threats
+        #     self.b_nforcing_threats = nforce_threats
+        # else:
+        #     self.w_winning_threats = win_threats
+        #     self.w_forcing_threats = force_threats
+        #     self.w_nforcing_threats = nforce_threats
+
+        # return win_threats, force_threats, nforce_threats

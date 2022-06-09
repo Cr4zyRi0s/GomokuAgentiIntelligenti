@@ -1,16 +1,12 @@
 from gomoku import Game
 from gui import GUIHandler, xy_to_colrow
-from players import AIPlayer, AIRandomPlayer, HumanPlayer
+from players import AIPlayer, HumanPlayer
 import pygame
 
 from boardstate import get_index_transform_func
-from threats import Threat
-
 import re
 
-PERIOD = 20
 last_move = (0,0)
-
 
 def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
     pthreats = game.board_state.b_threats if black else game.board_state.w_threats
@@ -80,7 +76,7 @@ if __name__ == "__main__":
     print_threats = lambda : print_threats_of_player(game,True)
     pllm = lambda : print_lines_of_last_moves(game)
 
-    game.on_turn_change_callbacks.append(print_threats)
+    #game.on_turn_change_callbacks.append(print_threats)
     game.on_turn_change_callbacks.append(update_threat_hints)
     #game.on_turn_change_callbacks.append(pllm)
 

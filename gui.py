@@ -1,5 +1,3 @@
-from platform import python_branch
-from pyparsing import White
 from gomoku import Game
 from pygame import gfxdraw
 import pygame

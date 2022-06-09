@@ -1,16 +1,17 @@
+from typing import Tuple
+
 from boardstate import BoardState
-from gomoku import no_moves_possible
-from boardstate import BoardState
+from utils import no_moves_possible
 
 import math
 import numpy as np
 
-DEFAULT_SEARCH_DEPTH = 2
+DEFAULT_SEARCH_DEPTH = 4
 
 def gomoku_check_winner(state : BoardState) -> tuple:
-    if len(state.b_winning_threats) > 0:
+    if len(state.b_threats['winning']) > 0:
         return True,'black'
-    elif len(state.w_winning_threats) > 0:
+    elif len(state.w_threats['winning']) > 0:
         return False,'white'
     else:
         return False,''
@@ -31,25 +32,24 @@ def check_neighbours(board:np.array, pos: tuple):
 def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
     children = []
     n_threats = 0
-    f_t, opp_f_t = state.b_threats['forcing'],state.w_threats['forcing'] if maximize else state.w_threats['forcing'],state.b_threats['forcing']
-    nf_t, opp_nf_t = state.b_threats['nforcing'],state.w_threats['nforcing'] if maximize else state.w_threats['nforcing'],state.b_threats['nforcing']
+    f_t, opp_f_t = (state.b_threats['forcing'],state.w_threats['forcing']) if maximize else (state.w_threats['forcing'],state.b_threats['forcing'])
+    nf_t, opp_nf_t = (state.b_threats['nforcing'],state.w_threats['nforcing']) if maximize else (state.w_threats['nforcing'],state.b_threats['nforcing'])
 
     for ft in opp_f_t:
-        children.append(ft.get_counter_moves())
+        children.extend([(m, maximize) for m in ft.get_counter_moves()])
         n_threats += 1
 
     for ft in f_t:
-        children.append(ft.get_open_slots())
+        children.extend([(m, maximize) for m in ft.get_counter_moves()])
         n_threats += 1
 
     for nft in nf_t:
-        children.append(nft.get_open_slots())
+        children.extend([(m, maximize) for m in nft.get_counter_moves()])
         n_threats += 1
 
     for nft in opp_nf_t:
-        children.append(nft.get_counter_moves())
+        children.extend([(m, maximize) for m in nft.get_counter_moves()])
         n_threats += 1
-
 
     #If no threats are found just return one of the cells with an adjacent stone
     if n_threats == 0:
@@ -67,36 +67,33 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
 def gomoku_state_static_eval(state : BoardState):
     score = 0
 
-    for lvl,ts in state.b_forcing_threats:
-        for t in ts: 
-            score += lvl * 3         
-
-    for lvl,ts in state.b_nforcing_threats:
-        for t in ts: 
-            score += lvl
-
-
-    for lvl,ts in state.w_forcing_threats:
-        for t in ts:
-            score -= lvl * 3
-
-    for lvl,ts in state.w_forcing_threats:
-        for t in ts:
-            score -= lvl
+    bl_f_t, wh_f_t = state.b_threats['forcing'],state.w_threats['forcing']
+    bl_nf_t, wh_nf_t = state.b_threats['nforcing'],state.w_threats['nforcing']
+    
+    score += len(bl_f_t) * 100
+    
+    for nft in bl_nf_t:
+        score += nft.info['type'][0]
+    
+    score -= len(wh_f_t) * 100
+    
+    for nft in wh_nf_t:
+        score -= nft.info['type'][0] 
     
     return score
 
 
-def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.inf) -> float:
+def minimax(state : BoardState, depth : int, maximize : bool, alpha : float = -math.inf, beta : float = math.inf) -> float:
     win,winner = gomoku_check_winner(state)
     if win:
         return math.inf if winner == 'black' else -math.inf
     
-    if no_moves_possible(state.grid):
+    if no_moves_possible(state.grid):        
         return 0
     
     if depth == 0:
         return gomoku_state_static_eval(state)
+
 
     if maximize:
         maxEval = -math.inf
@@ -104,7 +101,7 @@ def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.
             move,_ = child
 
             state.make_move(move, maximize)
-            eval = minimax(child, depth - 1, False, alpha, beta)
+            eval = minimax(state, depth - 1, False, alpha, beta)
             state.unmake_last_move()
 
             maxEval = max(maxEval,eval)
@@ -118,7 +115,7 @@ def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.
             move,_ = child
 
             state.make_move(move, maximize)            
-            eval = minimax(child, depth - 1, True, alpha, beta)
+            eval = minimax(state, depth - 1, True, alpha, beta)
             state.unmake_last_move()
 
             minEval = min(minEval,eval)
@@ -128,7 +125,7 @@ def minimax(state : BoardState, depth, maximize, alpha = -math.inf, beta = math.
 
         return minEval
     
-def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> tuple:
+def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
     best = None
     best_score = -math.inf if maximize else math.inf
     for child in gomoku_get_state_children(state, maximize):
@@ -143,7 +140,7 @@ def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int
             if score < best_score:
                 best_score = score
                 best = child
-    return best
+    return best[0]
 
 
         

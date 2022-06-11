@@ -185,39 +185,30 @@ class GUIHandler:
                 if self.game.swap2_state["accept_or_place"]:
                     swap2_msg = "White player is deciding his color or to place more stones"
                     if isinstance(self.game.blackPlayer, HumanPlayer):
-                        w_button = Button(
-                        label = "White",
-                        pos = (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                        font = 30,
-                        bg = BLACK)
-                        w_button.draw(self.screen)
-                        b_button = Button(label = "Black",
-                        pos = (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                        font = 30,
-                        bg = BLACK)
-                        b_button.draw()
+                        self._create_button('white',
+                        (300, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
+                        )
+                        self._create_button('black',
+                        (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
+                        )
+                        self._create_button('place',
+                        (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
+                        )  
                 else:
-                    self.buttons = []
+                    self._reset_buttons()
                 if self.game.swap2_state["second_placement"]:
                     swap2_msg = "White player can place 1 black stone and 1 white stone"                    
                 if self.game.swap2_state["select_color"]:                    
                     swap2_msg = "Black player is deciding his color"
                     if isinstance(self.game.blackPlayer, HumanPlayer):
-                        w_button = Button(
-                        label = "White",
-                        pos = (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                        font = 30,
-                        bg = BLACK)
-                        w_button.draw(self.screen)
-                        b_button = Button(label = "Black",
-                        pos = (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30),
-                        font = 30,
-                        bg = BLACK)
-                        b_button.draw(self.screen)
-                        self.buttons = [w_button,b_button]
+                        self._create_button('white',
+                        (200, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
+                        )
+                        self._create_button('black',
+                        (100, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
+                        )                        
                 else:
-                    self.buttons = []        
-
+                    self._reset_buttons()
                 txt = self.font.render(swap2_msg, True, BLACK)
                 self.screen.blit(txt,WIN_POS)
             else:
@@ -227,7 +218,6 @@ class GUIHandler:
                 )
                 txt = self.font.render(turn_msg, True, BLACK)
                 self.screen.blit(txt, TURN_POS)
-
         
         for lvl,hints in self.threat_hints.items():
             for h in hints:
@@ -259,3 +249,15 @@ class GUIHandler:
                     Thread(target = self.handle_right_click).start()
             if event.type == pygame.QUIT:
                 sys.exit()
+    
+    def _create_button(self, label : str, pos: tuple):
+        button = Button(
+                        label = label,
+                        pos = pos,
+                        font = 30,
+                        bg = BLACK)
+        button.draw(self.screen)
+        self.buttons.append(button)
+
+    def _reset_buttons(self):
+        self.buttons.clear()

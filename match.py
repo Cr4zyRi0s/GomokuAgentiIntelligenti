@@ -47,7 +47,7 @@ class Match:
         self.gui.update()  
 
     def save_match(self):        
-        filename_parts = [self.match_id]
+        filename_parts = [self.match_id, self.game.blackPlayer.name, self.game.whitePlayer.name]
         filename_parts.extend(self.tags)
         filename = '_'.join(filename_parts)
         path = 'match_data'

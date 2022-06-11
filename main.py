@@ -24,7 +24,6 @@ def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
                     for s in t.get_open_slots():                                  
                         gui.add_threat_hint(*s,t_lvl)
 
-
 def draw_threat_hints(game : Game, gui : GUIHandler):
     gui.reset_threat_hints()
     draw_threats_for_player(game,gui,True)
@@ -68,7 +67,7 @@ if __name__ == "__main__":
     ai_black = AIRandomPlayer()
     human  = HumanPlayer()
 
-    match = Match(ai_black,ai_white,save_match_data=True, skip_swap2=True)
+    match = Match(ai_black,ai_white,save_match_data=True)
     
     update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
     match.game.add_turn_change_callback(update_threat_hints)

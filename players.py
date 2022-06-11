@@ -1,4 +1,5 @@
 import random
+from gomoku import is_valid_move
 from boardstate import deepcopy_boardstate
 from utils import is_valid_move
 from minimax import DEFAULT_SEARCH_DEPTH, gomoku_get_best_move, gomoku_state_static_eval
@@ -40,12 +41,7 @@ class Player:
     def __init__(self):
         self.name = 'BasePlayer'
         self.game = None
-        self.color = None
-
-        self.first_placement = False    
-        self.accept_or_place = False
-        self.second_placement = False
-        self.select_color = False      
+        self.color = None 
 
     def can_play(self):
         if self.game.winning_player is not None:
@@ -58,20 +54,16 @@ class Player:
 
     def assign_color(self, color):
         self.color = color
-        self.name = '_'.join([self.name.split('_')[0], self.color])
+        self.name = '_'.join([self.name.split('_')[0], self.color[:2]])
 
     def swap2_first_place_stones(self):    
-        pass
-    
+        pass    
     def swap2_second_place_stones(self):
         pass
-
     def swap2_accept_or_place(self):
         pass
-
     def swap2_select_color(self):
         pass
-
     def play_turn(self):
         pass
     
@@ -108,8 +100,13 @@ class AIPlayer(Player):
 
         self.game.swap2_accept_or_place(self,'white')
                 
-    def swap2_second_place_stones(self):                        
-        pass    
+    def swap2_second_place_stones(self):       
+        bstate = self.game.board_state        
+        other_stones = [m[0] for m in bstate.moves]         
+        black_stone = place_stone_not_aligned(bstate.size, other_stones)
+        other_stones.append(black_stone)
+        white_stone = place_stone_not_aligned(bstate.size, other_stones)
+        self.game.swap2_second_placement([black_stone], [white_stone])
 
     def swap2_select_color(self):
         bstate = self.game.board_state
@@ -177,52 +174,101 @@ class HumanPlayer(Player):
     def __init__(self):
         super.__init__()
         self.name = self.__name__
+        
+        self.swap2_state = {
+            'first_pl' : False,
+            'second_pl' : False,
+            'accept_or_pl' : False,
+            'select_col' : False
+            }
 
     def swap2_first_place_stones(self):    
-        self.first_placement = True
-        self.black_stones_placed = 0
-        self.white_stones_placed = 0
+        for k in self.swap2_state:
+            self.swap2_state[k] = False
+        self.swap2_state['first_pl'] = True
+
+        self.black_positions = []
+        self.white_positions = []
 
     def swap2_second_place_stones(self):
-        self.second_placement = True
-        self.black_stones_placed = 0
-        self.white_stones_placed = 0
+        for k in self.swap2_state:
+            self.swap2_state[k] = False
+        self.swap2_state['second_pl'] = True
+
+        self.black_positions = []
+        self.white_positions = []
 
     def swap2_accept_or_place(self):
-        pass
+        for k in self.swap2_state:
+            self.swap2_state[k] = False
+        self.swap2_state['accept_or_pl'] = True
 
     def swap2_select_color(self):
-        pass
+        for k in self.swap2_state:
+            self.swap2_state[k] = False
+        self.swap2_state['select_col'] = True
 
     def on_click_grid(self,x,y,c,r):
-        if self.first_placement:
-            if self.black_stones_placed < 2:
-                if self.game.place_stone((c,r),True):
-                    self.black_stones_placed += 1               
-            elif self.white_stones_placed < 1:
-                if self.game.place_stone((c,r),False):
-                    self.white_stones_placed += 1            
-                    self.first_placement = False
-                    self.game.swap2_first_placement()
-        elif self.second_placement:
-            if self.black_stones_placed < 1:
-                if self.game.place_stone((c,r),True):
-                    self.black_stones_placed += 1               
-            elif self.white_stones_placed < 1:
-                if self.game.place_stone((c,r),False):
-                    self.white_stones_placed += 1
-                    self.second_placement = False
-                    self.game.swap2_second_placement()
+        if self.swap2_state['first_pl']:
+            if len(self.black_positions) < 2:
+                if is_valid_move(c,r,self.game.board_state.grid):
+                    self.black_positions.append((c,r))               
+            elif len(self.white_positions) < 1:
+                if is_valid_move(c,r,self.game.board_state.grid):
+                    self.white_positions.append((c,r))                        
+                    self.swap2_state['first_pl'] = False
+                    self.game.swap2_first_placement(self.black_positions, self.white_positions)
+        elif self.swap2_state['second_pl']:
+            if len(self.black_positions) < 1:
+                if is_valid_move(c,r,self.game.board_state.grid):
+                    self.black_positions.append((c,r))               
+            elif len(self.white_positions) < 1:
+                if is_valid_move(c,r,self.game.board_state.grid):
+                    self.white_positions.append((c,r))               
+                    self.swap2_state['second_pl'] = False
+                    self.game.swap2_second_placement(self.black_positions, self.white_positions)
         else:
             if self.can_play():
                 self.game.turn(self,(c,r))
 
-    def on_button_click(self, text):
-        print(text)
+    def on_button_click(self, text : str):
+        if self.swap2_state['select_col']:
+            selection = text.lower()
+            assert selection in ['white', 'black'], 'Expected \'white\' or \'black\' got %s' % (text) 
+            self.game.swap2_select_color(self,selection)
+            self.swap2_state['select_col'] = False       
+        elif self.swap2_state['accept_or_pl']:
+            selection = text.lower()
+            assert selection in ['white', 'black','place'], 'Expected [\'white\',\'black\',\'place\'] got %s' % (text) 
+            self.game.swap2_accept_or_place(self,selection)
+            self.swap2_state['accept_or_pl'] = False
 
 
 if __name__ == '__main__':
-    pass
+    def test_place_not_aligned():
+        bsize = 15
+        stones = [(7,7)]
+        naligned_stones = [place_stone_not_aligned(bsize,stones) for _ in range(100)]
+
+        for s in naligned_stones:
+            assert s[0] != s[1]
+            assert s[0] != 7
+            assert s[1] != 7
+            assert s[0] != bsize - 1 - s[1]
+
+    def test_place_not_aligned2():
+        bsize = 15
+        stones = [(7,7),(3,5)]
+        naligned_stones = [place_stone_not_aligned(bsize,stones) for _ in range(100)]        
+
+        for s in naligned_stones:
+            assert s[0] != s[1]
+            assert s[0] != 7
+            assert s[1] != 7
+            assert s[0] != bsize - 1 - s[1]
+
+    test_place_not_aligned()
+    test_place_not_aligned2()
 
 
 

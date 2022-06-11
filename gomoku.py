@@ -1,6 +1,4 @@
-from io import DEFAULT_BUFFER_SIZE
 from operator import xor
-import numpy as np
 
 from boardstate import BoardState
 from utils import DEFAULT_BOARD_SIZE,is_valid_move
@@ -23,11 +21,11 @@ class Game:
 
         self.whitePlayer = whitePlayer
         self.whitePlayer.game = self
-        self.whitePlayer.color = "white"
+        # self.whitePlayer.color = "white"
 
         self.blackPlayer = blackPlayer
         self.blackPlayer.game = self
-        self.blackPlayer.color = "black"
+        # self.blackPlayer.color = "black"
 
         self.gui = None
         self.swap2_phase = True
@@ -36,6 +34,7 @@ class Game:
         "accept_or_place" : False ,
         "second_placement" : False,
         "select_color" : False}
+        self.swap2_data = {}
 
     def add_turn_change_callback(self, func):
         self.on_turn_change_callbacks.append(func)
@@ -43,8 +42,14 @@ class Game:
     def add_game_end_callback(self, func):
         self.on_game_end_callbacks.append(func)
 
+    def gui_draw(self):
+        if self.gui is not None:
+            self.gui.draw()
+
     def skip_swap2(self):
         self.swap2_phase = False
+        self.blackPlayer.assign_color('black')
+        self.whitePlayer.assign_color('white')
 
     def pass_move(self):
         self.black_turn = not self.black_turn
@@ -65,7 +70,13 @@ class Game:
 
         self.swap2_state["first_placement"] = False
         self.swap2_state["accept_or_place"] = True
-        self.gui.draw()
+        self.gui_draw()
+
+        self.swap2_data = {'first_placement' : {
+            'black' : black_positions,
+            'white' : white_positions 
+        }}
+
         self.whitePlayer.swap2_accept_or_place()
 
     def swap2_accept_or_place(self, player, choice):
@@ -75,7 +86,7 @@ class Game:
         else:          
             self.swap2_state["accept_or_place"] = False
             self.swap2_state["second_placement"] = True
-            self.gui.draw()
+            self.gui_draw()
             player.swap2_second_place_stones()
         
     def swap2_second_placement(self, black_positions : list = None, white_positions: list = None):
@@ -88,7 +99,13 @@ class Game:
             return
         self.swap2_state["second_placement"] = False
         self.swap2_state["select_color"] = True
-        self.gui.draw()
+
+        self.swap2_data = {'second_placement' : {
+            'black' : black_positions,
+            'white' : white_positions 
+        }}
+
+        self.gui_draw()
         self.blackPlayer.swap2_select_color()
 
     def swap2_select_color(self, player, choice):
@@ -96,26 +113,33 @@ class Game:
         self.swap2_state["select_color"] = False
         if choice == "white":
             self.whitePlayer = player
-            self.blackPlayer = other
+            self.blackPlayer = other                    
             self.swap2_end()
         elif choice == "black":
             self.whitePlayer = other
             self.blackPlayer = player
             self.swap2_end()
-        self.gui.draw()
+        
+        self.swap2_data = {
+            'black' : self.blackPlayer.name,
+            'white' : self.whitePlayer.name
+        }
+
+        self.blackPlayer.assign_color('black')
+        self.whitePlayer.assign_color('white')
+        self.gui_draw()
 
     def swap2_end(self):
         self.new_turn()
         self.swap2_phase = False        
-        self.gui.draw()
+        self.gui_draw()
         
     def place_stone(self,move,black) -> bool:    
         if not is_valid_move(*move, self.board_state.grid):            
             return False
         # update board array
         self.board_state.make_move(move,black)
-        if self.gui is not None:
-            self.gui.draw()
+        self.gui_draw()
         return True
 
     def place_stones(self, positions : list, black: bool) -> bool:
@@ -126,8 +150,7 @@ class Game:
         for pos in positions:
             self.board_state.make_move(pos, black)
         
-        if self.gui is not None:
-            self.gui.draw()
+        self.gui_draw()
         return True
 
     def turn(self, player, move) -> bool:
@@ -142,9 +165,10 @@ class Game:
             #if check_winning_condition(self.board_state.grid, move, player.color):
             if check_winning_condition(self):
                 self.winning_player = player.color
+                for cback in self.on_game_end_callbacks:
+                    cback()
             self.new_turn()
-            if self.gui is not None:
-                self.gui.draw()
+            self.gui_draw()
             return True
         return False
 
@@ -152,8 +176,7 @@ class Game:
         self.new_turn()
         self.board_state.unmake_last_move()
         self.winning_player = None
-        if self.gui is not None:
-            self.gui.draw()      
+        self.gui_draw()   
 
     def new_turn(self):
         self.black_turn = not self.black_turn

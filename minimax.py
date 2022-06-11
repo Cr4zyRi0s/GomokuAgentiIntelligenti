@@ -1,12 +1,20 @@
+from threading import Thread
 from typing import Tuple
 
-from boardstate import BoardState
+from boardstate import BoardState,deepcopy_boardstate
 from utils import no_moves_possible
+from joblib import Parallel,delayed
 
 import math
 import numpy as np
+import time
 
-DEFAULT_SEARCH_DEPTH = 4
+DEFAULT_SEARCH_DEPTH = 2
+
+SEARCH_DEPTHS = []
+BRANCHING_FACTOR = []
+
+parallel = Parallel(n_jobs=4,backend='threading')
 
 def gomoku_check_winner(state : BoardState) -> tuple:
     if len(state.b_threats['winning']) > 0:
@@ -34,22 +42,29 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
     n_threats = 0
     f_t, opp_f_t = (state.b_threats['forcing'],state.w_threats['forcing']) if maximize else (state.w_threats['forcing'],state.b_threats['forcing'])
     nf_t, opp_nf_t = (state.b_threats['nforcing'],state.w_threats['nforcing']) if maximize else (state.w_threats['nforcing'],state.b_threats['nforcing'])
-
+    
     for ft in opp_f_t:
         children.extend([(m, maximize) for m in ft.get_counter_moves()])
         n_threats += 1
 
+    if len(children) > 0:
+        return children
+
     for ft in f_t:
         children.extend([(m, maximize) for m in ft.get_counter_moves()])
         n_threats += 1
+
+    if len(children) > 0:
+        return children
 
     for nft in nf_t:
         children.extend([(m, maximize) for m in nft.get_counter_moves()])
         n_threats += 1
 
     for nft in opp_nf_t:
-        children.extend([(m, maximize) for m in nft.get_counter_moves()])
-        n_threats += 1
+        if nft.info['type'][0] == 3:
+            children.extend([(m, maximize) for m in nft.get_counter_moves()])
+            n_threats += 1
 
     #If no threats are found just return one of the cells with an adjacent stone
     if n_threats == 0:
@@ -60,9 +75,10 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
     
     #If the board doesn't have a stone yet, then pick the central intersection
     if len(children) == 0:
-        children.append(((state.size / 2 - 1,state.size / 2 - 1), maximize))
+        children.append(((state.size // 2, state.size // 2), maximize))
     
     return children
+
 
 def gomoku_state_static_eval(state : BoardState):
     score = 0
@@ -70,20 +86,17 @@ def gomoku_state_static_eval(state : BoardState):
     bl_f_t, wh_f_t = state.b_threats['forcing'],state.w_threats['forcing']
     bl_nf_t, wh_nf_t = state.b_threats['nforcing'],state.w_threats['nforcing']
     
-    score += len(bl_f_t) * 100
+    score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
+    score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
     
-    for nft in bl_nf_t:
-        score += nft.info['type'][0]
-    
-    score -= len(wh_f_t) * 100
-    
-    for nft in wh_nf_t:
-        score -= nft.info['type'][0] 
+    score -= sum([t.info['type'][0] * 10 + 100 for t in wh_f_t])
+    score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])
     
     return score
 
 
-def minimax(state : BoardState, depth : int, maximize : bool, alpha : float = -math.inf, beta : float = math.inf) -> float:
+def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf, beta = math.inf) -> float:
+    global BRANCHING_FACTOR
     win,winner = gomoku_check_winner(state)
     if win:
         return math.inf if winner == 'black' else -math.inf
@@ -94,10 +107,11 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha : float = -m
     if depth == 0:
         return gomoku_state_static_eval(state)
 
-
     if maximize:
         maxEval = -math.inf
-        for child in gomoku_get_state_children(state,maximize):
+        children = gomoku_get_state_children(state,maximize)
+        BRANCHING_FACTOR.append(len(children))
+        for child in children:
             move,_ = child
 
             state.make_move(move, maximize)
@@ -111,7 +125,9 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha : float = -m
         return maxEval
     else:
         minEval = math.inf
-        for child in gomoku_get_state_children(state,maximize):
+        children = gomoku_get_state_children(state,maximize)
+        BRANCHING_FACTOR.append(len(children))
+        for child in children:
             move,_ = child
 
             state.make_move(move, maximize)            
@@ -122,28 +138,35 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha : float = -m
             beta = min(beta,eval)
             if beta <= alpha:
                 break
-
         return minEval
     
 def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+    global BRANCHING_FACTOR        
+    start_time = time.time() 
+    children = gomoku_get_state_children(state,maximize)
     best = None
-    best_score = -math.inf if maximize else math.inf
-    for child in gomoku_get_state_children(state, maximize):
-        state.make_move(child[0], maximize)
-        score = minimax(state,DEFAULT_SEARCH_DEPTH,maximize)
-        state.unmake_last_move()
-        if maximize:
-            if score > best_score:
-                best_score = score
-                best = child
-        else:
-            if score < best_score:
-                best_score = score
-                best = child
+
+    if len(children) == 0:
+        pass
+    elif len(children) == 1:        
+        best = children[0]
+        BRANCHING_FACTOR.append(1)
+    else:
+        results = Parallel(n_jobs=6,backend='threading')(delayed(_eval_move)(
+        deepcopy_boardstate(state), child, maximize, search_depth) for child in children)
+
+        max_index = np.argmax(results)
+        best = children[max_index]        
+    
+    print(int(sum(BRANCHING_FACTOR) / len(BRANCHING_FACTOR)))
+    print('elapsed time: ', time.time() - start_time)
     return best[0]
 
-
-        
+def _eval_move(state : BoardState, child: tuple, maximize : bool, search_depth : int):
+    state.make_move(child[0], maximize)
+    score = minimax(state,search_depth,maximize)
+    state.unmake_last_move()
+    return score        
 '''      
 def gomoku_get_state_children(state : BoardState) -> list:
     board,_,is_black= state

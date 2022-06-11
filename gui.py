@@ -1,3 +1,5 @@
+from threading import Thread
+
 from gomoku import Game
 from pygame import gfxdraw
 import pygame
@@ -247,13 +249,13 @@ class GUIHandler:
 
         pygame.display.flip()
     
-    def update(self):        
+    def update(self): 
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
-                    self.handle_click()
+                    Thread(target = self.handle_click).start()
                 elif event.button == 3:
-                    self.handle_right_click()
+                    Thread(target = self.handle_right_click).start()
             if event.type == pygame.QUIT:
                 sys.exit()

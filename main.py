@@ -1,6 +1,9 @@
-from gomoku import Game
+from threading import Thread
+from time import sleep
+from match import Match
+from gomoku import Game,check_winning_condition
 from gui import GUIHandler, xy_to_colrow
-from players import AIPlayer, HumanPlayer
+from players import AIPlayer, AIRandomPlayer, HumanPlayer
 import pygame
 
 from boardstate import get_index_transform_func
@@ -52,34 +55,35 @@ def print_lines_of_last_moves(game : Game):
         print('315°:\t',str(list(re.finditer('[01]{5,}',line315))),'\n',line315)    
         print('-------------------\n')    
 
+def ai_play(game: Game):
+    if check_winning_condition(game):
+        return
+    if isinstance(game.blackPlayer,AIPlayer) and game.black_turn:
+        game.blackPlayer.play_turn()
+    elif isinstance(game.whitePlayer, AIPlayer) and not game.black_turn:
+        game.whitePlayer.play_turn()
+
 if __name__ == "__main__":
     ai_white = AIPlayer()
-    #ai_black = AIPlayer()
+    ai_black = AIRandomPlayer()
     human  = HumanPlayer()
-    game = Game(whitePlayer=ai_white, blackPlayer=human)    
-    gui = GUIHandler(game, [])
-    game.gui = gui
-    game.skip_swap2()
 
-    gui.init_pygame()
-    gui.clear_screen()
-    gui.draw()
+    match = Match(ai_black,ai_white,save_match_data=True, skip_swap2=True)
+    
+    update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
+    match.game.add_turn_change_callback(update_threat_hints)
 
-    ai_white_play = lambda x,y: ai_white.play_turn()
-    gui.add_on_click_callback(ai_white_play)
-    gui.add_on_click_callback(update_last_move)
+    #ai_play_lambda = lambda x,y: ai_play(match.game)
+    #ai_play_lambda2 = lambda : ai_play(match.game)
+    #match.gui.add_on_click_callback(ai_play_lambda)
+    #match.game.add_turn_change_callback(ai_play_lambda2)
+    #draw_thread = Thread(target = lambda : draw_loop(match.gui))
+    #draw_thread.start()
 
-    revert_turn = lambda x,y : game.revert_turn()
-    gui.add_on_right_click_callback(revert_turn)
-
-    update_threat_hints = lambda: draw_threat_hints(game,gui)
-    print_threats = lambda : print_threats_of_player(game,True)
-    pllm = lambda : print_lines_of_last_moves(game)
-
-    #game.on_turn_change_callbacks.append(print_threats)
-    game.on_turn_change_callbacks.append(update_threat_hints)
-    #game.on_turn_change_callbacks.append(pllm)
-
-    while True:    
-        gui.update()
-        pygame.time.wait(100)
+    #play_thread = Thread(target = ai_play_lambda)
+        
+    while True:        
+        match.update()
+        ai_play(match.game)
+        pygame.time.wait(500)
+        

@@ -1,7 +1,8 @@
-from ast import expr_context
-from shutil import ExecError
+from copy import copy, deepcopy
 import numpy as np
 import re
+
+from tqdm import tqdm
 
 from utils import *
 
@@ -16,6 +17,9 @@ NON_FORCING_THREAT_TYPES = [(3,1)]
 for i in range(1,3):
     NON_FORCING_THREAT_TYPES.extend([(i,j) for j in range(1, 6 - i + 1)])
 
+b_threats_info = None
+w_threats_info = None
+
 def check_correctness(threat : Threat, bucket : str):
     type = threat.info['type']
     if type in WINNING_THREAT_TYPES:
@@ -28,6 +32,7 @@ def check_correctness(threat : Threat, bucket : str):
         if bucket != 'nforcing':
             raise Exception('wrong threat identification (%s != %s)' % (bucket,'nforcing'))
 
+
 #-----------------------------------------------------------------------------------------
 #////////////////////////////////////////////////////////////////////////////////////////
 #-----------------------------------------------------------------------------------------
@@ -37,38 +42,44 @@ def check_correctness(threat : Threat, bucket : str):
 #-----------------------------------------------------------------------------------------
 
 class BoardState:
-    def __init__(self,size = 15):
-        self.size = size    
-        self.moves = []   
+    def __init__(self,size = 15, copy_instance = False):
+        global b_threats_info
+        global w_threats_info
 
-        board = np.full((self.size + 2, self.size + 2), 3, dtype='int8')
-        board[1:self.size + 1,1:self.size + 1] = 0
-        self.grid = board[1:self.size+1, 1:self.size+1]
-
-        board_45 = rot45(board)
-        board_45 = board_45[2:2 * self.size + 1,:]
-        board_315 = rot315(board)
-        board_315 = board_315[2:2 * self.size + 1,:]
-        board = board[1:self.size+1,:]
-
-        self.board = ''.join([str(el) for el in board.flatten()])
-        self.board_45 = ''.join([str(el) for el in board_45.flatten()])
-        self.board_90 = ''.join([str(el) for el in board.flatten()])
-        self.board_315 = ''.join([str(el) for el in board_315.flatten()])
-
-        b_threats_info, w_threats_info = load_precomputed_threats()
-
+        if b_threats_info is None or w_threats_info is None:
+            b_threats_info, w_threats_info = load_precomputed_threats()
         self.b_threats_info = b_threats_info
         self.w_threats_info = w_threats_info
-        self.w_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
-        self.b_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
-        self.threat_updates = {}
+
+        if not copy_instance:
+            self.size = size    
+            self.moves = []   
+
+            board = np.full((self.size + 2, self.size + 2), 3, dtype='int8')
+            board[1:self.size + 1,1:self.size + 1] = 0
+            self.grid = board[1:self.size+1, 1:self.size+1]
+
+            board_45 = rot45(board)
+            board_45 = board_45[2:2 * self.size + 1,:]
+            board_315 = rot315(board)
+            board_315 = board_315[2:2 * self.size + 1,:]
+            board = board[1:self.size+1,:]
+
+            self.board = ''.join([str(el) for el in board.flatten()])
+            self.board_45 = ''.join([str(el) for el in board_45.flatten()])
+            self.board_90 = ''.join([str(el) for el in board.flatten()])
+            self.board_315 = ''.join([str(el) for el in board_315.flatten()])
+
+            self.w_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
+            self.b_threats = {'winning' : set(), 'forcing' : set(), 'nforcing' : set()}
+            self.threat_updates = {}
     
     def make_move(self,move,is_black):
         self.grid[move[0], move[1]] = 1 if is_black else 2 
         stone = '1' if is_black else '2' 
         self._update_boards(move, stone)
-        self._update_threats(move, is_black)
+        #self._update_threats(move, is_black)
+        self._update_threats(move)
         self.moves.append((*move,is_black))
         
     def unmake_last_move(self):
@@ -76,25 +87,27 @@ class BoardState:
 
         self.grid[c, r] = 0
         self._update_boards((c,r), '0')
-        updt = self.threat_updates[str((c,r))]
+        self._update_threats((c,r))
+
+        #updt = self.threat_updates[str((c,r))]
 
         #print(c,r,is_black)
         #print(updt)
-        try:
-            for add in updt['white']['added']:
-                self.w_threats[add[1]].remove(add[0])
-            for rem in updt['white']['removed']:
-                self.w_threats[rem[1]].add(rem[0])
-        except KeyError:        
-            pass
+        # try:
+        #     for add in updt['white']['added']:
+        #         self.w_threats[add[1]].remove(add[0])
+        #     for rem in updt['white']['removed']:
+        #         self.w_threats[rem[1]].add(rem[0])
+        # except KeyError:        
+        #     pass
 
-        try:
-            for add in updt['black']['added']:
-                self.b_threats[add[1]].remove(add[0])
-            for rem in updt['black']['removed']:
-                self.b_threats[rem[1]].add(rem[0])
-        except KeyError:
-            pass
+        # try:
+        #     for add in updt['black']['added']:
+        #         self.b_threats[add[1]].remove(add[0])
+        #     for rem in updt['black']['removed']:
+        #         self.b_threats[rem[1]].add(rem[0])
+        # except KeyError:
+        #     pass
 
     def get_all_threats(self, black : bool) -> tuple:         
         raise NotImplementedError()
@@ -127,7 +140,12 @@ class BoardState:
         
         return removed
 
-    def _update_threats(self, last_move : tuple, black : bool):                
+    def _find_threats_intersecting(self, lines : dict,  spans : dict, black : bool):
+        ts = self.b_threats if black else self.w_threats
+        for angle, line in lines.items():
+            self._get_threats_in_repr(ts, line, black, spans[angle][0], angle)
+
+    def _update_threats(self,last_move):
         #check new threats in intersecting lines
         span, line = self._get_line(last_move)
         span90, line90 = self._get_line90(last_move)
@@ -135,29 +153,47 @@ class BoardState:
         span315, line315 = self._get_line315(last_move)
 
         spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
-        self.threat_updates[str(last_move)] = {
-            'black': {
-                'added' : set(),
-                'removed' : self._prune_old_threats(spans, True)
-            },  
-            'white' : {
-                'added' : set(),
-                'removed' :self._prune_old_threats(spans, False) 
-            }
-        }
+        lines = {0 : line, 45 : line45, 90 : line90, 315 : line315}
 
-        # self._prune_old_threats(spans, True)
-        # self._prune_old_threats(spans, False)   
+        self._prune_old_threats(spans, True)
+        self._prune_old_threats(spans, False)   
+
+        self._find_threats_intersecting(lines,spans,True)
+        self._find_threats_intersecting(lines,spans,False)
         
-        ts = self.b_threats if black else self.w_threats
 
-        added_threats = set()
-        added_threats.update(self._get_threats_in_repr(ts, line, black, span[0], 0))
-        added_threats.update(self._get_threats_in_repr(ts, line90, black, span90[0], 90))
-        added_threats.update(self._get_threats_in_repr(ts, line45, black, span45[0], 45))
-        added_threats.update(self._get_threats_in_repr(ts, line315, black, span315[0], 315))
 
-        self.threat_updates[str(last_move)]['black' if black else 'white']['added'] = added_threats
+    # def _update_threats(self, last_move : tuple, black : bool):                
+    #     #check new threats in intersecting lines
+    #     span, line = self._get_line(last_move)
+    #     span90, line90 = self._get_line90(last_move)
+    #     span45, line45 = self._get_line45(last_move)
+    #     span315, line315 = self._get_line315(last_move)
+
+    #     spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
+    #     self.threat_updates[str(last_move)] = {
+    #         'black': {
+    #             'added' : set(),
+    #             'removed' : self._prune_old_threats(spans, True)
+    #         },  
+    #         'white' : {
+    #             'added' : set(),
+    #             'removed' :self._prune_old_threats(spans, False) 
+    #         }
+    #     }
+
+    #     # self._prune_old_threats(spans, True)
+    #     # self._prune_old_threats(spans, False)   
+        
+    #     ts = self.b_threats if black else self.w_threats
+
+    #     added_threats = set()
+    #     added_threats.update(self._get_threats_in_repr(ts, line, black, span[0], 0))
+    #     added_threats.update(self._get_threats_in_repr(ts, line90, black, span90[0], 90))
+    #     added_threats.update(self._get_threats_in_repr(ts, line45, black, span45[0], 45))
+    #     added_threats.update(self._get_threats_in_repr(ts, line315, black, span315[0], 315))
+
+    #     self.threat_updates[str(last_move)]['black' if black else 'white']['added'] = added_threats
 
     def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
         rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
@@ -247,10 +283,6 @@ class BoardState:
         bounds = (cr_to_index315(*extr[0], self.size), cr_to_index315(*extr[1], self.size))
         return bounds, self.board_315[bounds[0] : bounds[1] + 1]    
 
-
-    def deepcopy(self):
-        pass   
-
     def _update_boards(self, move, stone):
         c,r = move
         self.board = replace_char(self.board, cr_to_index(c,r, self.size), stone)
@@ -258,68 +290,69 @@ class BoardState:
         self.board_45 = replace_char(self.board_45, cr_to_index45(c,r, self.size), stone)
         self.board_315 = replace_char(self.board_315, cr_to_index315(c,r, self.size), stone)
 
+def deepcopy_boardstate(bstate: BoardState) -> BoardState:
+    bcopy = BoardState(copy_instance=True)
+    
+    bcopy.size = bstate.size
+    bcopy.moves = bstate.moves[:]
+
+    bcopy.grid = np.copy(bstate.grid)
+    bcopy.board = bstate.board[:]
+    bcopy.board_45 = bstate.board_45[:]
+    bcopy.board_90 = bstate.board_90[:]
+    bcopy.board_315 = bstate.board_315[:]
+
+    bcopy.b_threats = deepcopy(bstate.b_threats)
+    bcopy.w_threats = deepcopy(bstate.w_threats)
+    return bcopy
+
+
 if __name__ == '__main__':
-    bstate = BoardState(10)
-    moves = [(i + 2,i)  for i in range(5)]
+    from time import time
+    
+    def test_time_make_unmake():
+        bstate = BoardState(15)
+        moves = [(i + 2,i)  for i in range(10)]    
+        start = time()
+        for _ in tqdm(range(1000000)):
+            for m in moves:
+                bstate.make_move(m, True)
+            for _ in range(len(moves)):
+                bstate.unmake_last_move()
+        print('elapsed time:', round(time() - start,4))
 
-    for m in moves:
-        bstate.make_move(m, True if m[0] % 2 == 0 else False)
+    def test_deep_copy():
+        start = time()
+        bstate = BoardState(15)
+        print('original creation time:', time() - start)
+        start = time()
+        bstate_copy = deepcopy_boardstate(bstate)
+        print('custom copy creation time:', time() - start)
+        assert id(bstate) != id (bstate_copy)
+        assert id(bstate.grid) != id (bstate_copy.grid)
+        assert id(bstate.b_threats) != id(bstate_copy.b_threats)
+        for type,ts in bstate.b_threats.items():
+            assert id(bstate_copy.b_threats[type]) != id(ts)
 
-    print(bstate.board_315)
-    for i in range(len(moves)):
-        print(moves[i])
-        print(bstate._get_line315(moves[i]))
+        assert id(bstate.w_threats) != id(bstate_copy.w_threats)
+        for type,ts in bstate.w_threats.items():
+            assert id(bstate_copy.w_threats[type]) != id(ts)
+
+    def test_deep_copy2():
+        bstate = BoardState(15)
+        bstate.make_move((7,7), True)
+        bcopy = deepcopy_boardstate(bstate)
+        
+        assert np.array_equal(bcopy.grid, bstate.grid)
+        assert bstate.b_threats == bcopy.b_threats
+        assert bstate.w_threats == bcopy.w_threats
+
+        bcopy.make_move((7,8), True)
+        
+        assert not np.array_equal(bcopy.grid, bstate.grid)
+        assert bstate.b_threats != bcopy.b_threats
+        assert bstate.w_threats == bcopy.w_threats
 
 
-
-# span = match.span()
-# if offset != 0:      
-#     span = list(span)           
-#     span[0] += offset
-#     span[1] += offset
-#     span = tuple(span)                
-# if not isinstance(dst[level], set):
-#     dst[level].append(Threat(match.group(), span, level, angle))
-# else:
-#     dst[level].add(Threat(match.group(), span, level, angle))
-
-# w_t = self.b_winning_threats if black else self.w_winning_threats
-# f_t = self.b_forcing_threats if black else self.w_forcing_threats
-# nf_t = self.b_nforcing_threats if black else self.w_nforcing_threats
-
-# for lvl,patts in f_t.items():
-#     self._get_threats_in_repr(line, black, span[0], 0)
-#     self._get_threats_in_repr(line90, black, span90[0], 90)
-#     self._get_threats_in_repr(line45, black, span45[0], 45)
-#     self._get_threats_in_repr(line315, black, span315[0], 315)
-
-# for lvl,patts in nf_t.items():
-#     self._get_threats_in_repr(line, black, span[0], 0)
-#     self._get_threats_in_repr(line90, black, span90[0], 90)
-#     self._get_threats_in_repr(line45, black, span45[0], 45)
-#     self._get_threats_in_repr(line315, black, span315[0], 315)
-
-# self.w_winning_threats = generic_to_white_threat(WINNING_THREAT)
-# self.b_winning_threats = generic_to_black_threat(WINNING_THREAT)
-
-# self.w_forcing_threats = generic_to_white_threat(FORCING_THREATS)
-# self.b_forcing_threats = generic_to_black_threat(FORCING_THREATS)    
-
-# self.w_nforcing_threats = generic_to_white_threat(NON_FORCING_THREATS)
-# self.b_nforcing_threats = generic_to_black_threat(NON_FORCING_THREATS)   
-
-        # win_threats = self._get_threats(self.b_winning_threats if black else self.w_winning_threats)
-        # force_threats = self._get_threats(self.b_forcing_threats if black else self.w_forcing_threats)
-        # nforce_threats = self._get_threats(self.b_nforcing_threats if black else self.w_nforcing_threats)
-
-        # #TEMPORANEO
-        # if black:
-        #     self.b_winning_threats = win_threats
-        #     self.b_forcing_threats = force_threats
-        #     self.b_nforcing_threats = nforce_threats
-        # else:
-        #     self.w_winning_threats = win_threats
-        #     self.w_forcing_threats = force_threats
-        #     self.w_nforcing_threats = nforce_threats
-
-        # return win_threats, force_threats, nforce_threats
+    test_deep_copy()
+    test_deep_copy2()

@@ -67,7 +67,7 @@ if __name__ == "__main__":
     ai_black = AIRandomPlayer()
     human  = HumanPlayer()
 
-    match = Match(ai_black,ai_white,save_match_data=True)
+    match = Match(human,ai_white,save_match_data=True)
     
     update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
     match.game.add_turn_change_callback(update_threat_hints)

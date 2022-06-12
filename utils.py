@@ -96,7 +96,6 @@ def is_valid_move(col : int, row : int, board : np.array) -> bool:
     Returns:
         boolean: True if move is valid, False otherewise
     """
-    # TODO: check for ko situation (infinite back and forth)
     if col < 0 or col >= board.shape[0]:
         return False
     if row < 0 or row >= board.shape[0]:

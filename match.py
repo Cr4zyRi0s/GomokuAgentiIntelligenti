@@ -32,6 +32,8 @@ class Match:
         self.game = Game(self.playerWhite, self.playerBlack)
         if skip_swap2:
             self.game.skip_swap2()
+        else:
+            self.game.swap2_init()
         if self.gui_enabled:
             self.gui = GUIHandler(self.game)
             self.game.gui = self.gui                       

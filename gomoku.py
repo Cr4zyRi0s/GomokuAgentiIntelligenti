@@ -120,9 +120,11 @@ class Game:
             self.blackPlayer = player
             self.swap2_end()
         
-        self.swap2_data = {
+        self.swap2_data = { 
+            'select_color' : {
             'black' : self.blackPlayer.name,
             'white' : self.whitePlayer.name
+            }
         }
 
         self.blackPlayer.assign_color('black')

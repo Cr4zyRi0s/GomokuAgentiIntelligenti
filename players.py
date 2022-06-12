@@ -1,7 +1,6 @@
 import random
-from gomoku import is_valid_move
-from boardstate import deepcopy_boardstate
 from utils import is_valid_move
+from boardstate import deepcopy_boardstate
 from minimax import DEFAULT_SEARCH_DEPTH, gomoku_get_best_move, gomoku_state_static_eval
 
 def place_random_stones(board, n_stones : int) -> list:
@@ -71,7 +70,7 @@ class AIPlayer(Player):
     def __init__(self,search_depth = DEFAULT_SEARCH_DEPTH, seed = 24):
         super().__init__()
         self.seed = seed
-        self.name = self.__name__
+        self.name = self.__class__.__name__
         self.search_depth = search_depth
         random.seed(self.seed)
 
@@ -89,6 +88,7 @@ class AIPlayer(Player):
         self.game.swap2_first_placement(b_stone_placements, [w_stone_placement])
 
     def swap2_accept_or_place(self):
+        print('ai accept_or_place')
         bstate = self.game.board_state
         bl_nft = bstate.b_threats['nforcing'] 
 
@@ -172,8 +172,8 @@ class AIRandomPlayer(AIPlayer):
 
 class HumanPlayer(Player):
     def __init__(self):
-        super.__init__()
-        self.name = self.__name__
+        super(HumanPlayer, self).__init__()
+        self.name = self.__class__.__name__
         
         self.swap2_state = {
             'first_pl' : False,
@@ -182,7 +182,8 @@ class HumanPlayer(Player):
             'select_col' : False
             }
 
-    def swap2_first_place_stones(self):    
+    def swap2_first_place_stones(self): 
+        print('allow first stone placement')   
         for k in self.swap2_state:
             self.swap2_state[k] = False
         self.swap2_state['first_pl'] = True
@@ -208,25 +209,17 @@ class HumanPlayer(Player):
             self.swap2_state[k] = False
         self.swap2_state['select_col'] = True
 
+
     def on_click_grid(self,x,y,c,r):
+        print('on click grid')
         if self.swap2_state['first_pl']:
-            if len(self.black_positions) < 2:
-                if is_valid_move(c,r,self.game.board_state.grid):
-                    self.black_positions.append((c,r))               
-            elif len(self.white_positions) < 1:
-                if is_valid_move(c,r,self.game.board_state.grid):
-                    self.white_positions.append((c,r))                        
-                    self.swap2_state['first_pl'] = False
-                    self.game.swap2_first_placement(self.black_positions, self.white_positions)
+            if self._stone_placement(2,1,(c,r)):
+                self.swap2_state['first_pl'] = False
+                self.game.swap2_first_placement(self.black_positions, self.white_positions)
         elif self.swap2_state['second_pl']:
-            if len(self.black_positions) < 1:
-                if is_valid_move(c,r,self.game.board_state.grid):
-                    self.black_positions.append((c,r))               
-            elif len(self.white_positions) < 1:
-                if is_valid_move(c,r,self.game.board_state.grid):
-                    self.white_positions.append((c,r))               
-                    self.swap2_state['second_pl'] = False
-                    self.game.swap2_second_placement(self.black_positions, self.white_positions)
+            if self._stone_placement(1,1,(c,r)):
+                self.swap2_state['second_pl'] = False
+                self.game.swap2_second_placement(self.black_positions, self.white_positions)
         else:
             if self.can_play():
                 self.game.turn(self,(c,r))
@@ -242,7 +235,32 @@ class HumanPlayer(Player):
             assert selection in ['white', 'black','place'], 'Expected [\'white\',\'black\',\'place\'] got %s' % (text) 
             self.game.swap2_accept_or_place(self,selection)
             self.swap2_state['accept_or_pl'] = False
+    
+    def _stone_placement(self, n_black, n_white, pos) -> bool:
+        c,r = pos
+        l_b = len(self.black_positions)
+        l_w = len(self.white_positions)
+        if l_b < n_black:
+            if is_valid_move(c,r,self.game.board_state.grid):
+                self.black_positions.append((c,r))  
+                self.game.board_state.grid[c,r] = 1
+                self.game.gui_draw()
+                #print('black %d %d'% (c,r))        
+        elif l_w < n_white:
+            if is_valid_move(c,r,self.game.board_state.grid):
+                self.white_positions.append((c,r))      
+                self.game.board_state.grid[c,r] = 2
+                self.game.gui_draw()
+                #print('white %d %d'% (c,r))     
 
+        l_b = len(self.black_positions)
+        l_w = len(self.white_positions)
+
+        if l_b == n_black and l_w == n_white:
+            self.game.board_state.grid.fill(0)
+            return True
+        else:
+            return False
 
 if __name__ == '__main__':
     def test_place_not_aligned():
@@ -269,7 +287,6 @@ if __name__ == '__main__':
 
     test_place_not_aligned()
     test_place_not_aligned2()
-
 
 
 

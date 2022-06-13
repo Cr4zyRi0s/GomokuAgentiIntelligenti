@@ -96,7 +96,6 @@ def gomoku_state_static_eval(state : BoardState):
 
 
 def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf, beta = math.inf) -> float:
-    global BRANCHING_FACTOR
     win,winner = gomoku_check_winner(state)
     if win:
         return math.inf if winner == 'black' else -math.inf
@@ -110,7 +109,6 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf,
     if maximize:
         maxEval = -math.inf
         children = gomoku_get_state_children(state,maximize)
-        BRANCHING_FACTOR.append(len(children))
         for child in children:
             move,_ = child
 
@@ -126,7 +124,6 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf,
     else:
         minEval = math.inf
         children = gomoku_get_state_children(state,maximize)
-        BRANCHING_FACTOR.append(len(children))
         for child in children:
             move,_ = child
 
@@ -158,7 +155,7 @@ def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int
         max_index = np.argmax(results)
         best = children[max_index]        
     
-    print(int(sum(BRANCHING_FACTOR) / len(BRANCHING_FACTOR)))
+    #print(int(sum(BRANCHING_FACTOR) / len(BRANCHING_FACTOR)))
     print('elapsed time: ', time.time() - start_time)
     return best[0]
 

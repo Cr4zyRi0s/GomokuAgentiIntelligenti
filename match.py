@@ -15,7 +15,8 @@ class Match:
                 playerBlack : Player,
                 playerWhite : Player,
                 gui_enabled = True,
-                save_match_data : bool = False,                
+                save_match_data : bool = False,
+                match_data_path : str = 'match_data',                
                 match_id : str = 'match',
                 skip_swap2 : bool = False,
                 tags : List[str]  = []):
@@ -24,6 +25,7 @@ class Match:
         self.playerWhite = playerWhite        
         self.gui_enabled = gui_enabled
         self.save_match_data = save_match_data
+        self.match_data_path = match_data_path
         self.match_id = match_id
         self.tags = tags
         
@@ -45,14 +47,14 @@ class Match:
             self.game.add_turn_change_callback(self._update_move_data)
             self.game.add_game_end_callback(self.save_match)
     
-    def update(self):  
+    def update(self):          
         self.gui.update()  
 
     def save_match(self):        
-        filename_parts = [self.match_id, self.game.blackPlayer.name, self.game.whitePlayer.name]
+        filename_parts = [self.match_id]
         filename_parts.extend(self.tags)
         filename = '_'.join(filename_parts)
-        path = 'match_data'
+        path = self.match_data_path
 
         if not os.path.exists(path):
             try:
@@ -73,6 +75,7 @@ class Match:
         with open(full_path, 'w') as file:
             json.dump({
             'swap2_data' : self.game.swap2_data,
+            'winner' : self.game.winning_player,
             'moves' : self.game.board_state.moves,
             'move_data' : self.move_data
             }

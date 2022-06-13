@@ -56,6 +56,7 @@ class Game:
         self.draw()
 
     def swap2_init(self):
+        self.swap2_data = {}
         self.blackPlayer.swap2_first_place_stones()
 
     def swap2_first_placement(self, black_positions : list = [], white_positions : list = []):
@@ -72,10 +73,10 @@ class Game:
         self.swap2_state["accept_or_place"] = True
         self.gui_draw()
 
-        self.swap2_data = {'first_placement' : {
+        self.swap2_data['first_placement'] = {
             'black' : black_positions,
             'white' : white_positions 
-        }}
+        }
 
         self.whitePlayer.swap2_accept_or_place()
 
@@ -100,10 +101,10 @@ class Game:
         self.swap2_state["second_placement"] = False
         self.swap2_state["select_color"] = True
 
-        self.swap2_data = {'second_placement' : {
+        self.swap2_data['second_placement'] = {
             'black' : black_positions,
             'white' : white_positions 
-        }}
+        }
 
         self.gui_draw()
         self.blackPlayer.swap2_select_color()
@@ -114,24 +115,23 @@ class Game:
         if choice == "white":
             self.whitePlayer = player
             self.blackPlayer = other                    
-            self.swap2_end()
         elif choice == "black":
             self.whitePlayer = other
             self.blackPlayer = player
-            self.swap2_end()
         
-        self.swap2_data = { 
-            'select_color' : {
+        self.swap2_data['select_color'] = {
             'black' : self.blackPlayer.name,
             'white' : self.whitePlayer.name
-            }
-        }
+        }    
 
         self.blackPlayer.assign_color('black')
         self.whitePlayer.assign_color('white')
+
+        self.swap2_end()                    
         self.gui_draw()
 
     def swap2_end(self):
+        print('swap2 phase end.')
         self.new_turn()
         self.swap2_phase = False        
         self.gui_draw()

@@ -74,21 +74,20 @@ class AIPlayer(Player):
         self.search_depth = search_depth
         random.seed(self.seed)
 
-    def swap2_first_place_stones(self):        
+    def swap2_first_place_stones(self):         
         #place the first black stone at random
         b_stone_placements = []
-        b_stone_placements[0] = (
+        b_stone_placements.append((
         random.randint(2,self.game.size - 3), 
-        random.randint(2,self.game.size - 3))
+        random.randint(2,self.game.size - 3)))
         #then choose to place a second stone so that it does not share a line with the first one
-        b_stone_placements[1] = place_stone_not_aligned(self.game.size, b_stone_placements)
+        b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
         #same goes for the white stone
         w_stone_placement = place_stone_not_aligned(self.game.size, b_stone_placements)
 
         self.game.swap2_first_placement(b_stone_placements, [w_stone_placement])
 
     def swap2_accept_or_place(self):
-        print('ai accept_or_place')
         bstate = self.game.board_state
         bl_nft = bstate.b_threats['nforcing'] 
 
@@ -100,9 +99,9 @@ class AIPlayer(Player):
 
         self.game.swap2_accept_or_place(self,'white')
                 
-    def swap2_second_place_stones(self):       
+    def swap2_second_place_stones(self):     
         bstate = self.game.board_state        
-        other_stones = [m[0] for m in bstate.moves]         
+        other_stones = [(m[0],m[1]) for m in bstate.moves]         
         black_stone = place_stone_not_aligned(bstate.size, other_stones)
         other_stones.append(black_stone)
         white_stone = place_stone_not_aligned(bstate.size, other_stones)
@@ -122,11 +121,11 @@ class AIPlayer(Player):
             new_state_score = gomoku_state_static_eval(bstate)
             bstate.unmake_last_move()
             if new_state_score <= 0:
-                self.game.swap2_select_color('white')
+                self.game.swap2_select_color(self,'white')
                 if not self.game.turn(self, best_white_move):
                     raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
             else:
-                self.game.swap2_select_color('black')
+                self.game.swap2_select_color(self,'black')
         else:
             self.game.swap2_select_color('white')
                                             

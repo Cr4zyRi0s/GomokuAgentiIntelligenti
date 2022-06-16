@@ -5,7 +5,7 @@ import itertools as it
 
 from threading import Thread
 from time import sleep
-from typing import List,Dict
+from typing import Dict
 from gomoku import check_winning_condition
 from match import Match
 from tqdm import tqdm
@@ -39,8 +39,10 @@ class Experiment:
             white_args = self.player_defs[white_id]['args']
 
             p_black = self.player_types[black_class](**black_args)
+            p_black.name = black_id
             p_white = self.player_types[white_class](**white_args)           
-                         
+            p_white.name = white_id
+
             for _ in tqdm(range(self.repetitions), desc='Simulating matches - %s vs. %s' % (m[0],m[1])):
                 curr_match = Match(p_black, p_white, gui_enabled=False,save_match_data=True,match_data_path=self.full_path)                                
                 curr_match.tags = [black_id + '_bl', white_id + '_wh']
@@ -54,11 +56,12 @@ class Experiment:
 
     def _check_player_id(self, id):
         if id not in self.player_types:
-            raise Exception('Id \'%s\' does not correspond to an existing player type.' % (id))
+            raise Exception('Id \'%s\' is not an existing player type.' % (id))
 
-    def _get_player_types(self):
+    def _get_player_types(self) -> dict:
         clsmembers = inspect.getmembers(sys.modules['players'], inspect.isclass)
-        return {mem[0].lower().replace('player', '') : mem[1] for mem in clsmembers if mem[0].lower() != 'player'}
+        return {mem[0].lower().replace('player', '') : mem[1] for mem in clsmembers
+        if mem[0].lower() != 'player'}
 
     def _create_dir(self):
         dir_name_parts = ['experiment',self.experiment_name]
@@ -78,13 +81,13 @@ if __name__ == '__main__':
             'args' : {
                 'search_depth' : 2
             }
-        },
-        'ai_sd3' : {
-            'class' : 'ai',
-            'args' : {
-                'search_depth' : 3
-            }
         }
+        # 'ai_sd3' : {
+        #     'class' : 'ai',
+        #     'args' : {
+        #         'search_depth' : 3
+        #     }
+        # }
     }
-    exp = Experiment('test',test_players, repetitions=1)
+    exp = Experiment('test2',test_players, repetitions=5)
     exp.run()

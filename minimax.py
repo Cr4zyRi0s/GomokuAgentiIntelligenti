@@ -2,6 +2,7 @@ from threading import Thread
 from typing import Tuple
 
 from boardstate import BoardState,deepcopy_boardstate
+from threats import generate_dependency_graph
 from utils import no_moves_possible
 from joblib import Parallel,delayed
 
@@ -15,6 +16,7 @@ SEARCH_DEPTHS = []
 BRANCHING_FACTOR = []
 
 parallel = Parallel(n_jobs=4,backend='threading')
+threat_dependency_graph = None
 
 def gomoku_check_winner(state : BoardState) -> tuple:
     if len(state.b_threats['winning']) > 0:
@@ -98,7 +100,7 @@ def gomoku_state_static_eval(state : BoardState):
 def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf, beta = math.inf) -> float:
     win,winner = gomoku_check_winner(state)
     if win:
-        return math.inf if winner == 'black' else -math.inf
+        return 1000000000 / (10 - depth) if winner == 'black' else -1000000000 / (10 - depth)
     
     if no_moves_possible(state.grid):        
         return 0
@@ -137,26 +139,45 @@ def minimax(state : BoardState, depth : int, maximize : bool, alpha = -math.inf,
                 break
         return minEval
     
-def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH, version : int = 1) -> Tuple[int,int]:
     global BRANCHING_FACTOR        
-    start_time = time.time() 
-    children = gomoku_get_state_children(state,maximize)
-    best = None
+    assert search_depth >= 1
 
-    if len(children) == 0:
-        pass
-    elif len(children) == 1:        
+    start_time = time.time() 
+    
+    if version == 1:
+        best = _get_best_move_v1()
+    elif version == 2:
+        best = _get_best_move_v2()
+    else:
+        raise Exception('Invalid version number (%d) for get_best_move' % (version))
+
+    #print(int(sum(BRANCHING_FACTOR) / len(BRANCHING_FACTOR)))
+    print('elapsed time: ', time.time() - start_time)
+    return best
+
+def _get_best_move_v2(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+    pass
+
+def _get_best_move_v1(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+    threats = state.b_threats if maximize else state.w_threats
+    for ft in threats['forcing']:
+        if ft.info['type'][0] == 4:      
+            return list(ft.get_counter_moves())[0]
+
+    children = gomoku_get_state_children(state,maximize)
+    best = None        
+
+    if len(children) == 1:        
         best = children[0]
         BRANCHING_FACTOR.append(1)
     else:
         results = Parallel(n_jobs=6,backend='threading')(delayed(_eval_move)(
-        deepcopy_boardstate(state), child, maximize, search_depth) for child in children)
+        deepcopy_boardstate(state), child, maximize, search_depth - 1) for child in children)
 
         max_index = np.argmax(results)
         best = children[max_index]        
-    
-    #print(int(sum(BRANCHING_FACTOR) / len(BRANCHING_FACTOR)))
-    print('elapsed time: ', time.time() - start_time)
+
     return best[0]
 
 def _eval_move(state : BoardState, child: tuple, maximize : bool, search_depth : int):

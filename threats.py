@@ -100,15 +100,18 @@ def precompute_threats(max_seq_len = 7) -> dict:
     return threats
 
 def generate_dependency_graph(threats : dict, max_seq_len : int = 7) -> dict:    
-    graphs = {}
-    for l in range(5,max_seq_len + 1):
-        curr_g = nx.DiGraph()
-        curr_g.add_nodes_from(threats[l].keys())
-        for seq,info in threats[l].items():
-            for m in info['p_moves']:
-                curr_g.add_edge(seq, replace_char(seq,m,'1'), move = m)   
-        graphs[l] = curr_g                
-    return graphs        
+    # graphs = {}
+    # for l in range(5,max_seq_len + 1):
+    #     curr_g = nx.DiGraph()
+    #     curr_g.add_nodes_from(threats[l].keys())
+    #     for seq,info in threats[l].items():
+    
+    graph = nx.DiGraph()
+    graph.add_edges_from(threats.keys())
+    for seq,info in threats[l].items():
+        for m in info['p_moves']:
+            graph.add_edge(seq, replace_char(seq,m,'1'), move = m)               
+    return graph        
 
 def store_precomputed_threats(threats, filename = 'threat_data.json'):
     with open('threat_data.json', 'w') as file:

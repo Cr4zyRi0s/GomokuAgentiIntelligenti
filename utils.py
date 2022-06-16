@@ -1,6 +1,12 @@
+import string
+import random 
 import numpy as np
 
 DEFAULT_BOARD_SIZE = 15
+
+def generate_random_string(length : int) -> str:
+    letters = string.ascii_lowercase
+    return ''.join([random.choice(letters) for _ in range(length)])
 
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]

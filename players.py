@@ -1,3 +1,5 @@
+import json
+from operator import xor
 import random
 from utils import is_valid_move
 from boardstate import deepcopy_boardstate
@@ -53,7 +55,7 @@ class Player:
 
     def assign_color(self, color):
         self.color = color
-        self.name = '_'.join([self.name.split('_')[0], self.color[:2]])
+        self.name = '_'.join([self.name, self.color[:2]])
 
     def swap2_first_place_stones(self):    
         pass    
@@ -65,6 +67,8 @@ class Player:
         pass
     def play_turn(self):
         pass
+    def get_definition() -> dict:
+        pass                        
     
 class AIPlayer(Player):
     def __init__(self,search_depth = DEFAULT_SEARCH_DEPTH, seed = 24):
@@ -95,15 +99,18 @@ class AIPlayer(Player):
             if t.info['type'][0] > 1:
                 break
         else:
-            self.game.swap2_accept_or_place(self,'place')
-
-        self.game.swap2_accept_or_place(self,'white')
+            self.game.swap2_accept_or_place(self,'white')           
+            return
+        
+        self.game.swap2_accept_or_place(self,'place')  
                 
     def swap2_second_place_stones(self):     
         bstate = self.game.board_state        
         other_stones = [(m[0],m[1]) for m in bstate.moves]         
         black_stone = place_stone_not_aligned(bstate.size, other_stones)
+
         other_stones.append(black_stone)
+
         white_stone = place_stone_not_aligned(bstate.size, other_stones)
         self.game.swap2_second_placement([black_stone], [white_stone])
 
@@ -128,7 +135,12 @@ class AIPlayer(Player):
                 self.game.swap2_select_color(self,'black')
         else:
             self.game.swap2_select_color('white')
-                                            
+
+    def get_definition(self) -> dict:
+        return {
+            'search_depth' : self.search_depth,
+            'seed' : self.seed
+        }
 
     def play_turn(self):
         if not self.can_play():
@@ -260,6 +272,63 @@ class HumanPlayer(Player):
             return True
         else:
             return False
+
+class ReplayPlayer(Player):
+    def __init__(self, match_data : dict, player_id : str):
+        super().__init__()        
+        self.player_id = player_id
+        self.start_color = match_data['player_data'][self.player_id]['start_color']
+        self.swap2_data = match_data['swap2_data']
+        self.last_move_index = 0
+
+        move_start_index = 5 if 'second_placement' in match_data else 3
+
+        self.moves = [(int(m[0]), int(m[1]), bool(m[2])) 
+        for m in match_data['moves'][move_start_index:] 
+        if not xor(bool(m[2]), self.swap2_data['select_color']['black'] == player_id)]
+        # print(self.moves)
+    #     self._load_match_data(match_data_path)
+    
+    # def _load_match_data(self, path : str):
+    #     with open(path, 'r') as file:
+    #         data_raw = json.load(file)
+        
+    #     self.swap2_data = data_raw['swap2_data']
+
+    def swap2_first_place_stones(self):
+        black_positions = [(int(pos[0]), int(pos[1])) 
+                            for pos in self.swap2_data['first_placement']['black']]
+        white_positions = [(int(pos[0]), int(pos[1])) 
+                            for pos in self.swap2_data['first_placement']['white']]
+        self.game.swap2_first_placement(black_positions, white_positions)
+
+    def swap2_accept_or_place(self):
+        if 'second_placement' in self.swap2_data:
+            self.game.swap2_accept_or_place(self,'place')
+        else:
+            self.swap2_select_color()
+
+    def swap2_second_place_stones(self):
+        black_positions = [(int(pos[0]), int(pos[1])) 
+                            for pos in self.swap2_data['second_placement']['black']]
+        white_positions = [(int(pos[0]), int(pos[1])) 
+                            for pos in self.swap2_data['second_placement']['white']]
+        self.game.swap2_second_placement(black_positions, white_positions)
+    
+    def swap2_select_color(self):
+        chosen_colors = [self.swap2_data['select_color']['black'],self.swap2_data['select_color']['white']]
+        if self.player_id == chosen_colors[0]:
+            self.game.swap2_select_color(self, 'black')
+        if self.player_id == chosen_colors[1]:
+            self.game.swap2_select_color(self, 'white')
+        
+    def play_turn(self):
+        move = self.moves[self.last_move_index]
+        move = (move[0], move[1])
+        self.last_move_index += 1
+        assert self.game.turn(self, move) , 'Expected to play move (%d,%d) but couldn\'t' % (move[0], move[1])
+
+
 
 if __name__ == '__main__':
     def test_place_not_aligned():

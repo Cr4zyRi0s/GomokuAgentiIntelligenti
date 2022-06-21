@@ -160,7 +160,7 @@ if __name__ == '__main__':
     #Codice di esempio per visualizzare il replay di una partita
     #Per eseguire i turni basta semplicemente cliccare in un punto qualsiasi all'interno della 
     #finestra
-    replay = ReplayMatch('experiments\experiment-test\match_ai_sd2_bl_ai_sd2_wh_1.json')
+    replay = ReplayMatch('experiments\experiment-test3\match_ai_sd2_bl_ai_sd2_wh_1.json')
     while True:
         replay.update()
         sleep(0.1)

@@ -1,5 +1,6 @@
 from threading import Thread
 from typing import Tuple
+from unittest import result
 
 from boardstate import BoardState,deepcopy_boardstate
 from threats import generate_dependency_graph
@@ -85,8 +86,11 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
 def gomoku_state_static_eval(state : BoardState):
     score = 0
 
-    bl_f_t, wh_f_t = state.b_threats['forcing'],state.w_threats['forcing']
-    bl_nf_t, wh_nf_t = state.b_threats['nforcing'],state.w_threats['nforcing']
+    bl_f_t = state.b_threats['forcing']
+    wh_f_t = state.w_threats['forcing']
+
+    bl_nf_t = state.b_threats['nforcing']
+    wh_nf_t = state.w_threats['nforcing']
     
     score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
     score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
@@ -146,9 +150,9 @@ def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int
     start_time = time.time() 
     
     if version == 1:
-        best = _get_best_move_v1()
+        best = _get_best_move_v1(state, maximize, search_depth)
     elif version == 2:
-        best = _get_best_move_v2()
+        best = _get_best_move_v2(state, maximize, search_depth)
     else:
         raise Exception('Invalid version number (%d) for get_best_move' % (version))
 
@@ -157,7 +161,9 @@ def gomoku_get_best_move(state : BoardState, maximize : bool, search_depth : int
     return best
 
 def _get_best_move_v2(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
-    pass
+    
+
+    return _get_best_move_v1(state, maximize, search_depth)
 
 def _get_best_move_v1(state : BoardState, maximize : bool, search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
     threats = state.b_threats if maximize else state.w_threats
@@ -175,8 +181,12 @@ def _get_best_move_v1(state : BoardState, maximize : bool, search_depth : int = 
         results = Parallel(n_jobs=6,backend='threading')(delayed(_eval_move)(
         deepcopy_boardstate(state), child, maximize, search_depth - 1) for child in children)
 
-        max_index = np.argmax(results)
-        best = children[max_index]        
+        if maximize:
+            index = np.argmax(results)
+        else:
+            index = np.argmin(results)
+
+        best = children[index]        
 
     return best[0]
 

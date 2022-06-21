@@ -1,0 +1,494 @@
+{
+    "player_data": {
+        "ai_sd2_wmsfg_bl_bl_bl": {
+            "start_color": "black",
+            "def": {
+                "search_depth": 2,
+                "seed": 24
+            }
+        },
+        "ai_sd2_fgfvv_wh_wh_wh": {
+            "start_color": "white",
+            "def": {
+                "search_depth": 2,
+                "seed": 24
+            }
+        }
+    },
+    "swap2_data": {
+        "first_placement": {
+            "black": [
+                [
+                    3,
+                    10
+                ],
+                [
+                    12,
+                    7
+                ]
+            ],
+            "white": [
+                [
+                    7,
+                    3
+                ]
+            ]
+        },
+        "select_color": {
+            "black": "ai_sd2_wmsfg_bl_bl_bl",
+            "white": "ai_sd2_fgfvv_wh_wh_wh"
+        }
+    },
+    "winner": "black",
+    "moves": [
+        [
+            3,
+            10,
+            true
+        ],
+        [
+            12,
+            7,
+            true
+        ],
+        [
+            7,
+            3,
+            false
+        ],
+        [
+            8,
+            4,
+            false
+        ],
+        [
+            4,
+            9,
+            true
+        ],
+        [
+            8,
+            3,
+            false
+        ],
+        [
+            2,
+            11,
+            true
+        ],
+        [
+            1,
+            12,
+            false
+        ],
+        [
+            6,
+            7,
+            true
+        ],
+        [
+            5,
+            8,
+            false
+        ],
+        [
+            12,
+            6,
+            true
+        ],
+        [
+            7,
+            4,
+            false
+        ],
+        [
+            12,
+            5,
+            true
+        ],
+        [
+            12,
+            8,
+            false
+        ],
+        [
+            12,
+            4,
+            true
+        ],
+        [
+            12,
+            3,
+            false
+        ],
+        [
+            2,
+            10,
+            true
+        ],
+        [
+            1,
+            10,
+            false
+        ],
+        [
+            5,
+            9,
+            true
+        ],
+        [
+            3,
+            12,
+            false
+        ],
+        [
+            5,
+            12,
+            true
+        ],
+        [
+            12,
+            9,
+            false
+        ],
+        [
+            2,
+            9,
+            true
+        ],
+        [
+            2,
+            8,
+            false
+        ],
+        [
+            4,
+            11,
+            true
+        ],
+        [
+            3,
+            9,
+            false
+        ],
+        [
+            6,
+            13,
+            true
+        ]
+    ],
+    "move_data": {
+        "(7, 3, False)": {
+            "time": 0.003,
+            "n_bthreats": [
+                8,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                4,
+                0,
+                0
+            ]
+        },
+        "(8, 4, False)": {
+            "time": 1.0196,
+            "n_bthreats": [
+                8,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                7,
+                0,
+                0
+            ]
+        },
+        "(4, 9, True)": {
+            "time": 1.0534,
+            "n_bthreats": [
+                11,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                7,
+                0,
+                0
+            ]
+        },
+        "(8, 3, False)": {
+            "time": 1.0453,
+            "n_bthreats": [
+                11,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                9,
+                0,
+                0
+            ]
+        },
+        "(2, 11, True)": {
+            "time": 1.0872,
+            "n_bthreats": [
+                13,
+                1,
+                0
+            ],
+            "n_wthreats": [
+                9,
+                0,
+                0
+            ]
+        },
+        "(1, 12, False)": {
+            "time": 1.0282,
+            "n_bthreats": [
+                14,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                11,
+                0,
+                0
+            ]
+        },
+        "(6, 7, True)": {
+            "time": 1.1223,
+            "n_bthreats": [
+                14,
+                1,
+                0
+            ],
+            "n_wthreats": [
+                11,
+                0,
+                0
+            ]
+        },
+        "(5, 8, False)": {
+            "time": 1.017,
+            "n_bthreats": [
+                15,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(12, 6, True)": {
+            "time": 1.1918,
+            "n_bthreats": [
+                18,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(7, 4, False)": {
+            "time": 1.126,
+            "n_bthreats": [
+                18,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(12, 5, True)": {
+            "time": 1.247,
+            "n_bthreats": [
+                20,
+                1,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(12, 8, False)": {
+            "time": 1.0284,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(12, 4, True)": {
+            "time": 1.3147,
+            "n_bthreats": [
+                23,
+                1,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(12, 3, False)": {
+            "time": 1.0166,
+            "n_bthreats": [
+                23,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                0,
+                0
+            ]
+        },
+        "(2, 10, True)": {
+            "time": 1.4033,
+            "n_bthreats": [
+                25,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                0,
+                0
+            ]
+        },
+        "(1, 10, False)": {
+            "time": 1.1728,
+            "n_bthreats": [
+                24,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(5, 9, True)": {
+            "time": 1.432,
+            "n_bthreats": [
+                27,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(3, 12, False)": {
+            "time": 1.1866,
+            "n_bthreats": [
+                27,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(5, 12, True)": {
+            "time": 1.5808,
+            "n_bthreats": [
+                27,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(12, 9, False)": {
+            "time": 1.1501,
+            "n_bthreats": [
+                27,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(2, 9, True)": {
+            "time": 1.5663,
+            "n_bthreats": [
+                25,
+                3,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                0,
+                0
+            ]
+        },
+        "(2, 8, False)": {
+            "time": 1.0252,
+            "n_bthreats": [
+                26,
+                2,
+                0
+            ],
+            "n_wthreats": [
+                17,
+                0,
+                0
+            ]
+        },
+        "(4, 11, True)": {
+            "time": 1.0251,
+            "n_bthreats": [
+                27,
+                2,
+                0
+            ],
+            "n_wthreats": [
+                18,
+                0,
+                0
+            ]
+        },
+        "(3, 9, False)": {
+            "time": 1.0253,
+            "n_bthreats": [
+                26,
+                1,
+                0
+            ],
+            "n_wthreats": [
+                18,
+                0,
+                0
+            ]
+        }
+    }
+}

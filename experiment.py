@@ -89,5 +89,5 @@ if __name__ == '__main__':
         #     }
         # }
     }
-    exp = Experiment('test2',test_players, repetitions=5)
+    exp = Experiment('test3',test_players, repetitions=5)
     exp.run()

@@ -5,7 +5,7 @@ from time import time,sleep
 from typing import List
 from boardstate import BoardState
 from players import Player, ReplayPlayer
-from gomoku import Game
+from gomoku import Game, check_winning_condition
 from gui import GUIHandler
 from utils import generate_random_string
 
@@ -154,6 +154,9 @@ class ReplayMatch(Match):
 
         advance_turn = lambda x,y : p_b.play_turn() if self.game.black_turn else p_w.play_turn()
         self.gui.add_on_click_callback(advance_turn)
+
+    def is_over(self) -> bool:
+        return check_winning_condition(self.game)
         
 
 if __name__ == '__main__':

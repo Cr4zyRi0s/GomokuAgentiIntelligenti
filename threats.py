@@ -20,9 +20,6 @@ def generate_all_sequences_of_len(length : int) -> set:
         if len(re.findall('1{6,}',s)) > 0:
             to_remove.add(s)
 
-        #elif len(re.findall('10{2,}1',s)) > 0:
-        #    to_remove.add(s)
-        
         elif length > 6 and s.count('1') >= length - 1:
             to_remove.add(s)
 
@@ -99,35 +96,25 @@ def precompute_threats(max_seq_len = 7) -> dict:
             threats[l][s] = {'type' : (lvl, sev), 'p_moves' : list(p_moves), 'b_def' : list(b_def)}
     return threats
 
-def generate_dependency_graph(threats : dict, max_seq_len : int = 7) -> dict:    
-    # graphs = {}
-    # for l in range(5,max_seq_len + 1):
-    #     curr_g = nx.DiGraph()
-    #     curr_g.add_nodes_from(threats[l].keys())
-    #     for seq,info in threats[l].items():
-    
+def generate_dependency_graph(threats : dict, black : bool = True) -> nx.DiGraph:
     graph = nx.DiGraph()
-    graph.add_edges_from(threats.keys())
-    for seq,info in threats[l].items():
+    graph.add_nodes_from(threats.keys())
+    for seq,info in threats.items():
         for m in info['p_moves']:
-            graph.add_edge(seq, replace_char(seq,m,'1'), move = m)               
+            graph.add_edge(seq, replace_char(seq,m,'1' if black else '2'), move = m)               
     return graph        
 
 def store_precomputed_threats(threats, filename = 'threat_data.json'):
-    with open('threat_data.json', 'w') as file:
+    with open(filename, 'w') as file:
         json.dump(threats, file)
 
 def load_precomputed_threats(filename = 'threat_data.json'):
-    with open('threat_data.json', 'r') as file:
+    with open(filename, 'r') as file:
         l_threats = json.load(file)
 
     b_threats = {}
-    w_threats = {}
-    max_l = max([int(k) for k in l_threats.keys()])
+    w_threats = {}    
     for l in l_threats.keys():
-        i_l = int(l)
-        # b_threats[i_l] = {}
-        # w_threats[i_l] = {}
         for seq,info in l_threats[l].items():
             type = info['type']
             p_moves = info['p_moves']
@@ -160,18 +147,18 @@ class Threat:
         self.info = info
         self.span = span
         self.angle = angle    
-        self.t_func = get_index_transform_func(angle)    
-        # t_func = get_index_transform_func(angle)
-        # self.cells = [t_func(index, board_size) for index in range(span[0], span[1])]
+        self.t_func = get_index_transform_func(angle)
 
     def get_open_slots(self) -> set:
         return {self.t_func(m + self.span[0]) for m in self.info['p_moves']}
 
     def get_counter_moves(self) -> set:
         return {self.t_func(m + self.span[0]) for m in self.info['b_def']}
+
+    def get_counter_moves_with_offsets(self) -> set:
+        return {(m, self.t_func(m + self.span[0])) for m in self.info['b_def']}
         
-    def __hash__(self) -> int:
-        # return 23 * self.cells[0][0] + 29 * self.cells[0][1] + 71 * self.cells[1][0] + 73 * self.cells[1][1]
+    def __hash__(self) -> int:        
         return 23 * self.span[0] + 29 * self.span[1] + self.angle * 71 
     
     def __eq__(self, other) -> bool:
@@ -192,8 +179,17 @@ class Threat:
             )
 
 if __name__ == '__main__':
-    t = time.time()
-    threats = precompute_threats(15)
-    store_precomputed_threats(threats)
+    start_time = time.time()
+    # threats = precompute_threats(15)
+    # store_precomputed_threats(threats)
     b_threats, w_threats = load_precomputed_threats()
-    print('elapsed time:', round(time.time() - t,4))
+    
+    b_graph = generate_dependency_graph(b_threats)
+    print(b_graph.number_of_nodes(), b_graph.number_of_edges())
+        
+    w_graph = generate_dependency_graph(w_threats, False)
+    print(w_graph.number_of_nodes(), w_graph.number_of_edges())
+    for t in b_threats:
+        pass
+
+    print('elapsed time:', round(time.time() - start_time,4))

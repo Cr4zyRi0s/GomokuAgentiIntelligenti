@@ -15,7 +15,7 @@ class Experiment:
         self.player_types = self._get_player_types()
 
         for data in player_defs.values():
-            self._check_player_id(data['class'])                
+            self._check_player_id(data['class'])
 
         self.player_defs = player_defs
         self.repetitions = repetitions
@@ -28,7 +28,8 @@ class Experiment:
         self._run_experiment()
 
     def _run_experiment(self):
-        matches = list(it.product(self.player_defs, repeat=2))        
+        matches = list(it.product(self.player_defs, repeat=2))
+        print('This experiment will simulate %d matches in total' % (self.repetitions * len(matches)))        
         for m in matches:
             black_id = m[0]
             white_id = m[1]
@@ -82,12 +83,6 @@ if __name__ == '__main__':
                 'search_depth' : 2
             }
         }
-        # 'ai_sd3' : {
-        #     'class' : 'ai',
-        #     'args' : {
-        #         'search_depth' : 3
-        #     }
-        # }
     }
     exp = Experiment('test3',test_players, repetitions=5)
     exp.run()

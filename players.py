@@ -58,24 +58,31 @@ class Player:
         self.name = '_'.join([self.name, self.color[:2]])
 
     def swap2_first_place_stones(self):    
-        pass    
+        raise NotImplementedError()    
     def swap2_second_place_stones(self):
-        pass
+        raise NotImplementedError()
     def swap2_accept_or_place(self):
-        pass
+        raise NotImplementedError()
     def swap2_select_color(self):
-        pass
+        raise NotImplementedError()
     def play_turn(self):
-        pass
+        raise NotImplementedError()
     def get_definition() -> dict:
-        pass                        
+        raise NotImplementedError() 
     
 class AIPlayer(Player):
-    def __init__(self,search_depth = DEFAULT_SEARCH_DEPTH, seed = 24):
+    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = 24, t_weights : dict = None):
         super().__init__()
         self.seed = seed
         self.name = self.__class__.__name__
         self.search_depth = search_depth
+        if t_weights is None:
+            self.t_weights = {
+                'forcing' : 100,
+                'nforcing' : 1
+            }
+        else:
+            self.t_weights = t_weights
         random.seed(self.seed)
 
     def swap2_first_place_stones(self):         
@@ -123,9 +130,9 @@ class AIPlayer(Player):
 
         state_score = gomoku_state_static_eval(bstate)
         if state_score > 0:
-            best_white_move = gomoku_get_best_move(bstate,False,self.search_depth)
+            best_white_move = gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth)
             bstate.make_move(best_white_move, False)
-            new_state_score = gomoku_state_static_eval(bstate)
+            new_state_score = gomoku_state_static_eval(bstate, self.t_weights)
             bstate.unmake_last_move()
             if new_state_score <= 0:
                 self.game.swap2_select_color(self,'white')
@@ -148,7 +155,7 @@ class AIPlayer(Player):
 
         print('ai', self.color,'thinking...')
         maximize = True if self.color == 'black' else False
-        best_move = gomoku_get_best_move(self.game.board_state, maximize)
+        best_move = gomoku_get_best_move(self.game.board_state, maximize, self.t_weights)
         if not self.game.turn(self,best_move):
             raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
         print('ai', self.color,'done')
@@ -220,6 +227,8 @@ class HumanPlayer(Player):
             self.swap2_state[k] = False
         self.swap2_state['select_col'] = True
 
+    def get_definition(self) -> dict:
+        return {}
 
     def on_click_grid(self,x,y,c,r):
         print('on click grid')

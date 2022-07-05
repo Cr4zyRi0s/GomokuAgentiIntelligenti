@@ -71,18 +71,9 @@ if __name__ == "__main__":
     
     update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
     match.game.add_turn_change_callback(update_threat_hints)
-
-    #ai_play_lambda = lambda x,y: ai_play(match.game)
-    #ai_play_lambda2 = lambda : ai_play(match.game)
-    #match.gui.add_on_click_callback(ai_play_lambda)
-    #match.game.add_turn_change_callback(ai_play_lambda2)
-    #draw_thread = Thread(target = lambda : draw_loop(match.gui))
-    #draw_thread.start()
-
-    #play_thread = Thread(target = ai_play_lambda)
         
     while True:        
         match.update()
         ai_play(match.game)
-        pygame.time.wait(500)
+        pygame.time.wait(100)
         

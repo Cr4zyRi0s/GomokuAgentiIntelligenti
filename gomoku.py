@@ -131,7 +131,7 @@ class Game:
         self.gui_draw()
 
     def swap2_end(self):
-        print('swap2 phase end.')
+        #print('swap2 phase end.')
         self.new_turn()
         self.swap2_phase = False        
         self.gui_draw()

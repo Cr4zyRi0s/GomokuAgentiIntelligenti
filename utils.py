@@ -74,7 +74,6 @@ def index315_to_cr(index,size : int = DEFAULT_BOARD_SIZE)  -> tuple:
     r = rc - size + c + 1
     return c,r
 
-
 def get_index_transform_func(angle : int):
     if angle == 0:
         return index_to_cr
@@ -86,8 +85,6 @@ def get_index_transform_func(angle : int):
         return index315_to_cr
     else:
         raise Exception('Invalid angle value %d' % (angle))
-
-
 
 def no_moves_possible(board : np.array) -> bool:
     n_avail = np.count_nonzero(board)

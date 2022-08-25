@@ -26,10 +26,11 @@ ai_sd4 = {
 players_ft = {
     'sd2' : ai_sd2, 
     'sd3' : ai_sd3, 
-    'sd4' : ai_sd4}
+    'sd4' : ai_sd4
+    }
 
 start_time = time()
-experiment_sd_var = Experiment('search-depth-var', players_ft, repetitions=5)
+experiment_sd_var = Experiment('search-depth-var', players_ft, repetitions=1)
 experiment_sd_var.run()
 print('Experiment took %f to run.' % (round(time() - start_time),3))
 

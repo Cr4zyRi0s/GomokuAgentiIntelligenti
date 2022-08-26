@@ -1,6 +1,7 @@
 import json
 from operator import xor
 import random
+from time import time
 from utils import is_valid_move
 from boardstate import deepcopy_boardstate
 from minimax import DEFAULT_SEARCH_DEPTH, gomoku_get_best_move, gomoku_state_static_eval
@@ -71,9 +72,12 @@ class Player:
         raise NotImplementedError() 
     
 class AIPlayer(Player):
-    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = 24, t_weights : dict = None):
+    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = None, t_weights : dict = None):
         super().__init__()
-        self.seed = seed
+        if seed is None:
+            self.seed = int(time())
+        else:
+            self.seed = seed
         self.name = self.__class__.__name__
         self.search_depth = search_depth
         if t_weights is None:
@@ -290,19 +294,11 @@ class ReplayPlayer(Player):
         self.swap2_data = match_data['swap2_data']
         self.last_move_index = 0
 
-        move_start_index = 5 if 'second_placement' in match_data else 3
+        move_start_index = 5 if 'second_placement' in match_data['swap2_data'] else 3
 
         self.moves = [(int(m[0]), int(m[1]), bool(m[2])) 
         for m in match_data['moves'][move_start_index:] 
         if not xor(bool(m[2]), self.swap2_data['select_color']['black'] == player_id)]
-        # print(self.moves)
-    #     self._load_match_data(match_data_path)
-    
-    # def _load_match_data(self, path : str):
-    #     with open(path, 'r') as file:
-    #         data_raw = json.load(file)
-        
-    #     self.swap2_data = data_raw['swap2_data']
 
     def swap2_first_place_stones(self):
         black_positions = [(int(pos[0]), int(pos[1])) 
@@ -336,7 +332,6 @@ class ReplayPlayer(Player):
         move = (move[0], move[1])
         self.last_move_index += 1
         assert self.game.turn(self, move) , 'Expected to play move (%d,%d) but couldn\'t' % (move[0], move[1])
-
 
 
 if __name__ == '__main__':

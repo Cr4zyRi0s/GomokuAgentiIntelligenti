@@ -140,7 +140,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-search-depth-var'
+    experiment_name = 'experiment-sd-var-seed-var2'
     create_experiment_imgs(experiment_path,experiment_name)
 
 

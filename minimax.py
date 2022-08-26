@@ -102,26 +102,28 @@ def gomoku_state_static_eval(state : BoardState, t_weights : dict):
 
     bft_score = sum([_get_threat_score(t.info,t_weights) for t in bl_f_t])
     bnft_score = sum([_get_threat_score(nft.info,t_weights) for nft in bl_nf_t])
-    # bft_score *= t_weights['forcing']
-    # bnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][nft.info['type'][1] - 1] for nft in bl_nf_t])
-    # bnft_score *= t_weights['nforcing']
-
+ 
     wft_score = sum([_get_threat_score(t.info,t_weights) for t in wh_f_t])
     wnft_score = sum([_get_threat_score(nft.info,t_weights) for nft in wh_nf_t])
+
+    score += bft_score + bnft_score
+    score -= wft_score + wnft_score
+
+
     # wft_score = sum([THREAT_PRIORITY[t.info['type'][0] - 1][ t.info['type'][1] - 1] for t in wh_f_t])
     # wft_score *= t_weights['forcing']
     # wnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][ nft.info['type'][1] - 1] for nft in wh_nf_t])
     # wnft_score *= t_weights['nforcing']
 
-    score += bft_score + bnft_score
-    score -= wft_score + wnft_score
+    # bft_score *= t_weights['forcing']
+    # bnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][nft.info['type'][1] - 1] for nft in bl_nf_t])
+    # bnft_score *= t_weights['nforcing']
 
     # score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
     # score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
     
     # score -= sum([t.info['type'][0] * 10 + 100 for t in wh_f_t])
-    # score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])
-    
+    # score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])    
     return score
 
 def minimax(state : BoardState, depth : int, maximize : bool, t_weights : dict, alpha = -math.inf, beta = math.inf) -> float:
@@ -266,6 +268,6 @@ def _eval_move(state : BoardState,
     
     
     state.make_move(child[0], maximize)
-    score = minimax(state,search_depth,maximize, t_weights)
+    score = minimax(state,search_depth, not maximize, t_weights)
     state.unmake_last_move()
     return score      

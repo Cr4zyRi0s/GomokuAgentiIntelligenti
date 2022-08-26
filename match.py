@@ -7,7 +7,35 @@ from boardstate import BoardState
 from players import Player, ReplayPlayer
 from gomoku import Game, check_winning_condition
 from gui import GUIHandler
-from utils import generate_random_string
+from utils import generate_random_string, get_index_transform_func
+from operator import xor
+
+def print_threats_of_player(game : Game, black : bool):
+    threats = game.board_state.b_threats if black else game.board_state.w_threats
+    if len(threats['forcing']) <= 0:
+        return
+    print('BLACK' if black else 'WHITE','FORCING THREATS\n')
+    for t in threats['forcing']:
+        print(t)
+    print('-------------------\n')
+
+def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
+    pthreats = game.board_state.b_threats if black else game.board_state.w_threats
+    for lvl, ts in pthreats.items():    
+        for t in ts:
+            if lvl == 5:
+                trans_func = get_index_transform_func(t.angle)
+                gui.add_winning_streak_line(trans_func(t.span[0]), trans_func(t.span[1] - 1))
+            else:
+                t_lvl = t.info['type'][0]          
+                if t_lvl >= 3:
+                    for s in t.get_open_slots():                                  
+                        gui.add_threat_hint(*s,t_lvl)
+
+def draw_threat_hints(game : Game, gui : GUIHandler):
+    gui.reset_threat_hints()
+    draw_threats_for_player(game,gui,True)
+    draw_threats_for_player(game,gui,False)
 
 last_time = time()
 
@@ -20,6 +48,7 @@ class Match:
                 match_data_path : str = 'match_data',                
                 match_id : str = 'match',
                 skip_swap2 : bool = False,
+                show_threat_hints : bool = True,
                 tags : List[str]  = []):
 
         self.playerBlack = playerBlack
@@ -69,6 +98,10 @@ class Match:
             self.gui.init_pygame()
             self.gui.clear_screen()
             self.gui.draw()
+            if show_threat_hints:
+                    update_threat_hints = lambda: draw_threat_hints(self.game,self.gui)
+                    self.game.add_turn_change_callback(update_threat_hints)
+
 
     
     def update(self):          
@@ -131,7 +164,12 @@ class Match:
         last_time = time()
 
 class ReplayMatch(Match):
-    def __init__(self, match_data_path : str):
+    def __init__(self, 
+                match_data_path : str,
+                show_threat_hints : bool = True,
+                print_forcing_threats : bool = True
+                ):
+
         with open(match_data_path,'r') as file:
             data = json.load(file)
         
@@ -142,8 +180,8 @@ class ReplayMatch(Match):
         self.player1 = ReplayPlayer(data, player1_id)
         self.player2 = ReplayPlayer(data, player2_id)
         
-        p_b,p_w = (self.player1,self.player2) if self.player1.start_color == 'black' else  (self.player2,self.player1)
-        self.game = Game(p_b, p_w)
+        p1,p2 = (self.player1,self.player2) if self.player1.start_color == 'black' else  (self.player2,self.player1)
+        self.game = Game(p1, p2)
         self.gui = GUIHandler(self.game)
         self.game.gui = self.gui                       
         self.gui.init_pygame()
@@ -152,8 +190,19 @@ class ReplayMatch(Match):
 
         self.game.swap2_init()
 
-        advance_turn = lambda x,y : p_b.play_turn() if self.game.black_turn else p_w.play_turn()
+        advance_turn = lambda x,y : p1.play_turn() if not xor(self.game.black_turn, p1.color == 'black') else p2.play_turn()
         self.gui.add_on_click_callback(advance_turn)
+        
+        if show_threat_hints:
+            update_threat_hints = lambda: draw_threat_hints(self.game,self.gui)
+            self.game.add_turn_change_callback(update_threat_hints)
+        
+        if print_forcing_threats:
+            print_black_forcing_threats = lambda: print_threats_of_player(self.game,True)
+            print_white_forcing_threats = lambda: print_threats_of_player(self.game,False)
+            self.game.add_turn_change_callback(print_black_forcing_threats)
+            self.game.add_turn_change_callback(print_white_forcing_threats)
+            
 
     def is_over(self) -> bool:
         return check_winning_condition(self.game)
@@ -163,16 +212,7 @@ if __name__ == '__main__':
     #Codice di esempio per visualizzare il replay di una partita
     #Per eseguire i turni basta semplicemente cliccare in un punto qualsiasi all'interno della 
     #finestra
-    replay = ReplayMatch('experiments\experiment-test3\match_ai_sd2_bl_ai_sd2_wh_1.json')
+    replay = ReplayMatch('match_data/match_9.json')
     while True:
         replay.update()
         sleep(0.1)
-
-        
-
-
-
-
-
-
-        

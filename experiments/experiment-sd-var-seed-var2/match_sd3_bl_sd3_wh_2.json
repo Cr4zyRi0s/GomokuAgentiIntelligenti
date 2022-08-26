@@ -1,17 +1,17 @@
 {
     "player_data": {
-        "sd2_wmsfg": {
+        "sd3_jjwwy_bl": {
             "start_color": "black",
             "def": {
-                "search_depth": 2,
-                "seed": 24
+                "search_depth": 3,
+                "seed": 1661503548
             }
         },
-        "sd2_fgfvv": {
+        "sd3_ptwte_wh": {
             "start_color": "white",
             "def": {
-                "search_depth": 2,
-                "seed": 24
+                "search_depth": 3,
+                "seed": 1661503548
             }
         }
     },
@@ -19,132 +19,122 @@
         "first_placement": {
             "black": [
                 [
-                    3,
-                    4
+                    8,
+                    10
                 ],
                 [
-                    6,
+                    4,
                     2
                 ]
             ],
             "white": [
                 [
-                    9,
-                    9
+                    7,
+                    3
                 ]
             ]
         },
         "select_color": {
-            "black": "sd2_wmsfg",
-            "white": "sd2_fgfvv"
+            "black": "sd3_jjwwy_bl",
+            "white": "sd3_ptwte_wh"
         }
     },
     "winner": "white",
     "moves": [
         [
-            3,
-            4,
+            8,
+            10,
             true
+        ],
+        [
+            4,
+            2,
+            true
+        ],
+        [
+            7,
+            3,
+            false
         ],
         [
             6,
-            2,
-            true
-        ],
-        [
-            9,
-            9,
-            false
-        ],
-        [
-            10,
-            9,
-            false
-        ],
-        [
-            3,
-            3,
-            true
-        ],
-        [
-            11,
-            9,
-            false
-        ],
-        [
-            12,
-            9,
-            true
-        ],
-        [
-            11,
-            8,
-            false
-        ],
-        [
             4,
-            2,
-            true
-        ],
-        [
-            9,
-            8,
             false
         ],
         [
             5,
-            2,
+            5,
             true
         ],
         [
-            7,
-            2,
-            false
-        ],
-        [
-            2,
-            2,
-            true
-        ],
-        [
+            8,
             3,
-            2,
             false
         ],
         [
-            2,
+            9,
             3,
             true
         ],
         [
-            9,
-            10,
+            4,
+            3,
             false
         ],
         [
-            12,
+            5,
+            3,
+            true
+        ],
+        [
+            5,
+            4,
+            false
+        ],
+        [
+            4,
+            5,
+            true
+        ],
+        [
+            6,
+            5,
+            false
+        ],
+        [
+            7,
+            6,
+            true
+        ],
+        [
+            7,
+            4,
+            false
+        ],
+        [
+            8,
+            4,
+            true
+        ],
+        [
+            5,
+            6,
+            false
+        ],
+        [
+            4,
             7,
             true
         ],
         [
             9,
-            11,
-            false
-        ],
-        [
-            9,
-            12,
-            true
-        ],
-        [
-            9,
-            7,
+            2,
             false
         ]
     ],
     "move_data": {
-        "(9, 9, False)": {
-            "time": 0.4757,
+        "(7, 3, False)": {
+            "time": 0.0079,
             "n_bthreats": [
                 8,
                 0,
@@ -156,10 +146,10 @@
                 0
             ]
         },
-        "(10, 9, False)": {
-            "time": 1.0453,
+        "(6, 4, False)": {
+            "time": 1.0478,
             "n_bthreats": [
-                8,
+                7,
                 0,
                 0
             ],
@@ -169,8 +159,8 @@
                 0
             ]
         },
-        "(3, 3, True)": {
-            "time": 1.0549,
+        "(5, 5, True)": {
+            "time": 1.0704,
             "n_bthreats": [
                 11,
                 0,
@@ -182,23 +172,10 @@
                 0
             ]
         },
-        "(11, 9, False)": {
-            "time": 1.0493,
+        "(8, 3, False)": {
+            "time": 1.0678,
             "n_bthreats": [
                 11,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                9,
-                1,
-                0
-            ]
-        },
-        "(12, 9, True)": {
-            "time": 1.0178,
-            "n_bthreats": [
-                14,
                 0,
                 0
             ],
@@ -208,34 +185,34 @@
                 0
             ]
         },
-        "(11, 8, False)": {
-            "time": 1.0397,
-            "n_bthreats": [
-                13,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                12,
-                0,
-                0
-            ]
-        },
-        "(4, 2, True)": {
-            "time": 1.1111,
+        "(9, 3, True)": {
+            "time": 1.0831,
             "n_bthreats": [
                 15,
                 0,
                 0
             ],
             "n_wthreats": [
-                12,
+                10,
                 0,
                 0
             ]
         },
-        "(9, 8, False)": {
-            "time": 1.072,
+        "(4, 3, False)": {
+            "time": 1.0956,
+            "n_bthreats": [
+                14,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                13,
+                0,
+                0
+            ]
+        },
+        "(5, 3, True)": {
+            "time": 1.1342,
             "n_bthreats": [
                 15,
                 0,
@@ -247,11 +224,24 @@
                 0
             ]
         },
-        "(5, 2, True)": {
-            "time": 1.1148,
+        "(5, 4, False)": {
+            "time": 1.1357,
             "n_bthreats": [
-                16,
-                1,
+                15,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(4, 5, True)": {
+            "time": 1.175,
+            "n_bthreats": [
+                18,
+                0,
                 0
             ],
             "n_wthreats": [
@@ -260,106 +250,80 @@
                 0
             ]
         },
-        "(7, 2, False)": {
-            "time": 1.0161,
-            "n_bthreats": [
-                17,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(2, 2, True)": {
-            "time": 1.1298,
-            "n_bthreats": [
-                18,
-                1,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(3, 2, False)": {
-            "time": 1.0183,
+        "(6, 5, False)": {
+            "time": 1.1623,
             "n_bthreats": [
                 18,
                 0,
                 0
             ],
             "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(2, 3, True)": {
-            "time": 1.1639,
-            "n_bthreats": [
-                18,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                16,
-                0,
-                0
-            ]
-        },
-        "(9, 10, False)": {
-            "time": 1.1679,
-            "n_bthreats": [
-                18,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                16,
-                2,
-                0
-            ]
-        },
-        "(12, 7, True)": {
-            "time": 1.0178,
-            "n_bthreats": [
-                20,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                17,
+                13,
                 1,
                 0
             ]
         },
-        "(9, 11, False)": {
-            "time": 1.0115,
-            "n_bthreats": [
-                20,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                19,
-                1,
-                0
-            ]
-        },
-        "(9, 12, True)": {
-            "time": 1.0232,
+        "(7, 6, True)": {
+            "time": 1.0538,
             "n_bthreats": [
                 22,
                 0,
                 0
             ],
             "n_wthreats": [
-                19,
+                14,
+                0,
+                0
+            ]
+        },
+        "(7, 4, False)": {
+            "time": 1.2419,
+            "n_bthreats": [
+                22,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                13,
+                2,
+                0
+            ]
+        },
+        "(8, 4, True)": {
+            "time": 1.009,
+            "n_bthreats": [
+                23,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                12,
+                1,
+                0
+            ]
+        },
+        "(5, 6, False)": {
+            "time": 1.0112,
+            "n_bthreats": [
+                22,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                1,
+                0
+            ]
+        },
+        "(4, 7, True)": {
+            "time": 1.0164,
+            "n_bthreats": [
+                25,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
                 1,
                 0
             ]

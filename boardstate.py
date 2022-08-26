@@ -32,6 +32,14 @@ def check_correctness(threat : Threat, bucket : str):
         if bucket != 'nforcing':
             raise Exception('wrong threat identification (%s != %s)' % (bucket,'nforcing'))
 
+def get_threat_priority_from_type(type : tuple) -> str:
+    if type[0] == 5:
+        return 'winning'
+    elif type[0] == 4 or (type[0] == 3 and type[1] > 1):
+        return 'forcing'
+    else:
+        return 'nforcing'
+
 
 #-----------------------------------------------------------------------------------------
 #////////////////////////////////////////////////////////////////////////////////////////
@@ -201,15 +209,12 @@ class BoardState:
         added = set()
         for match in re.finditer(rgx, repr):
             group = match.group()
-            l = len(group)
-            # if group in t_info[l]:
+            l = len(group)            
+
             if group in t_info:
-                # info = t_info[l][group]
                 info = t_info[group]                
                 span = (match.span()[0] + offset, match.span()[1] + offset)
                 threat = Threat(group,info,span,angle)
-                #added.add((threat))
-
                 if info['type'] in WINNING_THREAT_TYPES:
                     dst['winning'].add(threat)
                     added.add((threat, 'winning'))
@@ -219,16 +224,12 @@ class BoardState:
                 else:
                     dst['nforcing'].add(threat)    
                     added.add((threat, 'nforcing'))
-            # else:
-            #     print('%s not found as a threat sequence' % group)
         for add in added:
             check_correctness(add[0], add[1])
         return added
 
     def _get_threats(self, black : bool):
         threats = self.b_threats if black else self.w_threats
-        # for level,patts in threat_patterns.items():
-        #     threats[level] = []
         self._get_threats_in_repr(self.board, black, angle = 0)
         self._get_threats_in_repr(self.board_90, black, angle = 90)
         self._get_threats_in_repr(self.board_45, black, angle = 45)
@@ -353,6 +354,8 @@ if __name__ == '__main__':
         assert bstate.b_threats != bcopy.b_threats
         assert bstate.w_threats == bcopy.w_threats
 
+    def test_get_threat_priority_from_type():
+        pass
 
     test_deep_copy()
     test_deep_copy2()

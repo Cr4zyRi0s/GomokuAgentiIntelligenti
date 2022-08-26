@@ -1,39 +1,20 @@
-from threading import Thread
-from time import sleep
-from match import Match
+from boardstate import BoardState
+from match import Match, draw_threat_hints
 from gomoku import Game,check_winning_condition
-from gui import GUIHandler, xy_to_colrow
+from gui import  xy_to_colrow
 from players import AIPlayer, AIRandomPlayer, HumanPlayer
-import pygame
+from boardstate import FORCING_THREAT_TYPES
 
-from boardstate import get_index_transform_func
+import pygame
 import re
 
 last_move = (0,0)
 
-def draw_threats_for_player(game : Game, gui : GUIHandler, black : bool):
-    pthreats = game.board_state.b_threats if black else game.board_state.w_threats
-    for lvl, ts in pthreats.items():    
-        for t in ts:
-            if lvl == 5:
-                trans_func = get_index_transform_func(t.angle)
-                gui.add_winning_streak_line(trans_func(t.span[0]), trans_func(t.span[1] - 1))
-            else:
-                t_lvl = t.info['type'][0]          
-                if t_lvl >= 3:
-                    for s in t.get_open_slots():                                  
-                        gui.add_threat_hint(*s,t_lvl)
-
-def draw_threat_hints(game : Game, gui : GUIHandler):
-    gui.reset_threat_hints()
-    draw_threats_for_player(game,gui,True)
-    draw_threats_for_player(game,gui,False)
-
 def print_threats_of_player(game : Game, black : bool):
     for type, ts in game.board_state.b_threats.items() if black else game.board_state.w_threats.items():
-        print('\n\n',type,'\n----------------')
-        for t in ts:
-            print(t)
+        if type == 'forcing':
+            for t in ts:
+                print(t)
     print('-------------------\n')
 
 def update_last_move(x,y):
@@ -63,7 +44,7 @@ def ai_play(game: Game):
         game.whitePlayer.play_turn()
 
 if __name__ == "__main__":
-    ai_white = AIPlayer()
+    ai_white = AIPlayer(search_depth=4)
     ai_black = AIRandomPlayer()
     human  = HumanPlayer()
 

@@ -1,7 +1,7 @@
 from operator import xor
 
 from boardstate import BoardState
-from utils import DEFAULT_BOARD_SIZE,is_valid_move
+from utils import DEFAULT_BOARD_SIZE,is_valid_move, no_moves_possible
 from players import Player
 
 class Game:
@@ -187,6 +187,8 @@ class Game:
 
 def check_winning_condition(game : Game):
     if len(game.board_state.b_threats['winning']) > 0 or len(game.board_state.w_threats['winning']) > 0:
+        return True
+    elif no_moves_possible(game.board_state.grid):
         return True
     return False
 

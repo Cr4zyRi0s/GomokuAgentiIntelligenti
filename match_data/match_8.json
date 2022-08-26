@@ -1,13 +1,10 @@
 {
     "player_data": {
-        "sd2_wmsfg": {
+        "HumanPlayer": {
             "start_color": "black",
-            "def": {
-                "search_depth": 2,
-                "seed": 24
-            }
+            "def": {}
         },
-        "sd2_fgfvv": {
+        "AIPlayer": {
             "start_color": "white",
             "def": {
                 "search_depth": 2,
@@ -19,329 +16,425 @@
         "first_placement": {
             "black": [
                 [
-                    3,
-                    4
+                    6,
+                    6
                 ],
                 [
-                    6,
-                    2
+                    7,
+                    7
                 ]
             ],
             "white": [
                 [
                     9,
-                    9
+                    4
+                ]
+            ]
+        },
+        "second_placement": {
+            "black": [
+                [
+                    8,
+                    11
+                ]
+            ],
+            "white": [
+                [
+                    4,
+                    5
                 ]
             ]
         },
         "select_color": {
-            "black": "sd2_wmsfg",
-            "white": "sd2_fgfvv"
+            "black": "HumanPlayer",
+            "white": "AIPlayer"
         }
     },
     "winner": "white",
     "moves": [
         [
+            6,
+            6,
+            true
+        ],
+        [
+            7,
+            7,
+            true
+        ],
+        [
+            9,
+            4,
+            false
+        ],
+        [
+            8,
+            11,
+            true
+        ],
+        [
+            4,
+            5,
+            false
+        ],
+        [
+            8,
+            3,
+            false
+        ],
+        [
+            7,
+            6,
+            true
+        ],
+        [
+            5,
+            4,
+            false
+        ],
+        [
+            7,
+            2,
+            true
+        ],
+        [
+            3,
+            6,
+            false
+        ],
+        [
+            2,
+            7,
+            true
+        ],
+        [
+            8,
+            4,
+            false
+        ],
+        [
+            6,
+            7,
+            true
+        ],
+        [
+            6,
+            5,
+            false
+        ],
+        [
+            6,
+            4,
+            true
+        ],
+        [
+            5,
+            3,
+            false
+        ],
+        [
+            5,
+            5,
+            true
+        ],
+        [
+            4,
+            4,
+            false
+        ],
+        [
+            4,
+            3,
+            true
+        ],
+        [
             3,
             4,
+            false
+        ],
+        [
+            2,
+            4,
+            true
+        ],
+        [
+            3,
+            5,
+            false
+        ],
+        [
+            3,
+            3,
+            true
+        ],
+        [
+            2,
+            6,
+            false
+        ],
+        [
+            1,
+            7,
             true
         ],
         [
             6,
             2,
-            true
-        ],
-        [
-            9,
-            9,
-            false
-        ],
-        [
-            10,
-            9,
-            false
-        ],
-        [
-            3,
-            3,
-            true
-        ],
-        [
-            11,
-            9,
-            false
-        ],
-        [
-            12,
-            9,
-            true
-        ],
-        [
-            11,
-            8,
-            false
-        ],
-        [
-            4,
-            2,
-            true
-        ],
-        [
-            9,
-            8,
-            false
-        ],
-        [
-            5,
-            2,
-            true
-        ],
-        [
-            7,
-            2,
-            false
-        ],
-        [
-            2,
-            2,
-            true
-        ],
-        [
-            3,
-            2,
-            false
-        ],
-        [
-            2,
-            3,
-            true
-        ],
-        [
-            9,
-            10,
-            false
-        ],
-        [
-            12,
-            7,
-            true
-        ],
-        [
-            9,
-            11,
-            false
-        ],
-        [
-            9,
-            12,
-            true
-        ],
-        [
-            9,
-            7,
             false
         ]
     ],
     "move_data": {
-        "(9, 9, False)": {
-            "time": 0.4757,
-            "n_bthreats": [
-                8,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                4,
-                0,
-                0
-            ]
-        },
-        "(10, 9, False)": {
-            "time": 1.0453,
-            "n_bthreats": [
-                8,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                7,
-                0,
-                0
-            ]
-        },
-        "(3, 3, True)": {
-            "time": 1.0549,
+        "(4, 5, False)": {
+            "time": 9.6276,
             "n_bthreats": [
                 11,
                 0,
                 0
             ],
             "n_wthreats": [
-                7,
+                8,
                 0,
                 0
             ]
         },
-        "(11, 9, False)": {
-            "time": 1.0493,
+        "(8, 3, False)": {
+            "time": 0.0702,
             "n_bthreats": [
                 11,
                 0,
                 0
             ],
             "n_wthreats": [
-                9,
+                11,
+                0,
+                0
+            ]
+        },
+        "(7, 6, True)": {
+            "time": 9.9119,
+            "n_bthreats": [
+                13,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                11,
+                0,
+                0
+            ]
+        },
+        "(5, 4, False)": {
+            "time": 0.2124,
+            "n_bthreats": [
+                13,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                13,
+                0,
+                0
+            ]
+        },
+        "(7, 2, True)": {
+            "time": 5.3601,
+            "n_bthreats": [
+                13,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                13,
+                0,
+                0
+            ]
+        },
+        "(3, 6, False)": {
+            "time": 0.2334,
+            "n_bthreats": [
+                13,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
                 1,
                 0
             ]
         },
-        "(12, 9, True)": {
-            "time": 1.0178,
+        "(2, 7, True)": {
+            "time": 9.1043,
             "n_bthreats": [
                 14,
                 0,
                 0
             ],
             "n_wthreats": [
-                10,
+                15,
                 0,
                 0
             ]
         },
-        "(11, 8, False)": {
-            "time": 1.0397,
+        "(8, 4, False)": {
+            "time": 0.2703,
             "n_bthreats": [
-                13,
+                14,
                 0,
                 0
             ],
             "n_wthreats": [
-                12,
+                17,
                 0,
                 0
             ]
         },
-        "(4, 2, True)": {
-            "time": 1.1111,
+        "(6, 7, True)": {
+            "time": 6.7617,
             "n_bthreats": [
                 15,
                 0,
                 0
             ],
             "n_wthreats": [
-                12,
+                17,
                 0,
                 0
             ]
         },
-        "(9, 8, False)": {
-            "time": 1.072,
+        "(6, 5, False)": {
+            "time": 0.3359,
             "n_bthreats": [
                 15,
                 0,
                 0
             ],
             "n_wthreats": [
-                13,
+                18,
                 0,
                 0
             ]
         },
-        "(5, 2, True)": {
-            "time": 1.1148,
+        "(6, 4, True)": {
+            "time": 17.4893,
             "n_bthreats": [
-                16,
-                1,
-                0
-            ],
-            "n_wthreats": [
-                13,
-                0,
-                0
-            ]
-        },
-        "(7, 2, False)": {
-            "time": 1.0161,
-            "n_bthreats": [
-                17,
+                18,
                 0,
                 0
             ],
             "n_wthreats": [
-                17,
+                18,
                 0,
                 0
             ]
         },
-        "(2, 2, True)": {
-            "time": 1.1298,
+        "(5, 3, False)": {
+            "time": 0.3726,
+            "n_bthreats": [
+                18,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                19,
+                0,
+                0
+            ]
+        },
+        "(5, 5, True)": {
+            "time": 2.3276,
             "n_bthreats": [
                 18,
                 1,
                 0
             ],
             "n_wthreats": [
-                17,
+                20,
                 0,
                 0
             ]
         },
-        "(3, 2, False)": {
-            "time": 1.0183,
+        "(4, 4, False)": {
+            "time": 0.1305,
             "n_bthreats": [
-                18,
+                19,
                 0,
                 0
             ],
             "n_wthreats": [
-                17,
+                21,
                 0,
                 0
             ]
         },
-        "(2, 3, True)": {
-            "time": 1.1639,
+        "(4, 3, True)": {
+            "time": 2.9481,
             "n_bthreats": [
-                18,
+                21,
                 0,
                 0
             ],
             "n_wthreats": [
-                16,
+                20,
                 0,
                 0
             ]
         },
-        "(9, 10, False)": {
-            "time": 1.1679,
+        "(3, 4, False)": {
+            "time": 0.4978,
             "n_bthreats": [
-                18,
+                20,
                 0,
                 0
             ],
             "n_wthreats": [
-                16,
+                20,
+                0,
+                0
+            ]
+        },
+        "(2, 4, True)": {
+            "time": 3.2466,
+            "n_bthreats": [
+                22,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                19,
+                0,
+                0
+            ]
+        },
+        "(3, 5, False)": {
+            "time": 0.4147,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                18,
                 2,
                 0
             ]
         },
-        "(12, 7, True)": {
-            "time": 1.0178,
+        "(3, 3, True)": {
+            "time": 8.8222,
             "n_bthreats": [
-                20,
+                21,
                 0,
                 0
             ],
             "n_wthreats": [
-                17,
+                18,
                 1,
                 0
             ]
         },
-        "(9, 11, False)": {
-            "time": 1.0115,
+        "(2, 6, False)": {
+            "time": 0.1147,
             "n_bthreats": [
-                20,
+                22,
                 0,
                 0
             ],
@@ -351,10 +444,10 @@
                 0
             ]
         },
-        "(9, 12, True)": {
-            "time": 1.0232,
+        "(1, 7, True)": {
+            "time": 1.4409,
             "n_bthreats": [
-                22,
+                24,
                 0,
                 0
             ],

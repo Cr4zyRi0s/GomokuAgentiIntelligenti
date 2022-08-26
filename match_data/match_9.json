@@ -1,13 +1,10 @@
 {
     "player_data": {
-        "sd2_wmsfg": {
+        "HumanPlayer": {
             "start_color": "black",
-            "def": {
-                "search_depth": 2,
-                "seed": 24
-            }
+            "def": {}
         },
-        "sd2_fgfvv": {
+        "AIPlayer": {
             "start_color": "white",
             "def": {
                 "search_depth": 2,
@@ -20,183 +17,181 @@
             "black": [
                 [
                     3,
-                    4
+                    3
                 ],
                 [
-                    6,
-                    2
+                    7,
+                    3
                 ]
             ],
             "white": [
                 [
-                    9,
-                    9
+                    3,
+                    7
+                ]
+            ]
+        },
+        "second_placement": {
+            "black": [
+                [
+                    8,
+                    11
+                ]
+            ],
+            "white": [
+                [
+                    4,
+                    5
                 ]
             ]
         },
         "select_color": {
-            "black": "sd2_wmsfg",
-            "white": "sd2_fgfvv"
+            "black": "AIPlayer",
+            "white": "HumanPlayer"
         }
     },
     "winner": "white",
     "moves": [
         [
             3,
-            4,
+            3,
             true
         ],
         [
+            7,
+            3,
+            true
+        ],
+        [
+            3,
+            7,
+            false
+        ],
+        [
+            8,
+            11,
+            true
+        ],
+        [
+            4,
+            5,
+            false
+        ],
+        [
+            3,
             6,
-            2,
-            true
-        ],
-        [
-            9,
-            9,
-            false
-        ],
-        [
-            10,
-            9,
-            false
-        ],
-        [
-            3,
-            3,
-            true
-        ],
-        [
-            11,
-            9,
-            false
-        ],
-        [
-            12,
-            9,
-            true
-        ],
-        [
-            11,
-            8,
             false
         ],
         [
             4,
-            2,
+            3,
             true
         ],
         [
-            9,
+            2,
+            7,
+            false
+        ],
+        [
+            1,
             8,
+            true
+        ],
+        [
+            2,
+            6,
             false
         ],
         [
             5,
-            2,
-            true
-        ],
-        [
-            7,
-            2,
-            false
-        ],
-        [
-            2,
-            2,
-            true
-        ],
-        [
-            3,
-            2,
-            false
-        ],
-        [
-            2,
             3,
             true
         ],
         [
-            9,
-            10,
+            6,
+            3,
             false
         ],
         [
-            12,
-            7,
+            5,
+            4,
             true
         ],
         [
-            9,
-            11,
+            2,
+            3,
             false
         ],
         [
-            9,
-            12,
+            4,
+            4,
             true
         ],
         [
-            9,
-            7,
+            5,
+            5,
+            false
+        ],
+        [
+            4,
+            2,
+            true
+        ],
+        [
+            4,
+            6,
+            false
+        ],
+        [
+            2,
+            8,
+            true
+        ],
+        [
+            1,
+            6,
+            false
+        ],
+        [
+            0,
+            6,
+            true
+        ],
+        [
+            5,
+            6,
             false
         ]
     ],
     "move_data": {
-        "(9, 9, False)": {
-            "time": 0.4757,
-            "n_bthreats": [
-                8,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                4,
-                0,
-                0
-            ]
-        },
-        "(10, 9, False)": {
-            "time": 1.0453,
-            "n_bthreats": [
-                8,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                7,
-                0,
-                0
-            ]
-        },
-        "(3, 3, True)": {
-            "time": 1.0549,
+        "(4, 5, False)": {
+            "time": 12.6369,
             "n_bthreats": [
                 11,
                 0,
                 0
             ],
             "n_wthreats": [
-                7,
+                8,
                 0,
                 0
             ]
         },
-        "(11, 9, False)": {
-            "time": 1.0493,
+        "(3, 6, False)": {
+            "time": 1.9335,
             "n_bthreats": [
                 11,
                 0,
                 0
             ],
             "n_wthreats": [
-                9,
-                1,
+                10,
+                0,
                 0
             ]
         },
-        "(12, 9, True)": {
-            "time": 1.0178,
+        "(4, 3, True)": {
+            "time": 0.1923,
             "n_bthreats": [
                 14,
                 0,
@@ -208,10 +203,23 @@
                 0
             ]
         },
-        "(11, 8, False)": {
-            "time": 1.0397,
+        "(2, 7, False)": {
+            "time": 13.5435,
             "n_bthreats": [
-                13,
+                14,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                11,
+                1,
+                0
+            ]
+        },
+        "(1, 8, True)": {
+            "time": 0.1107,
+            "n_bthreats": [
+                17,
                 0,
                 0
             ],
@@ -221,23 +229,10 @@
                 0
             ]
         },
-        "(4, 2, True)": {
-            "time": 1.1111,
+        "(2, 6, False)": {
+            "time": 9.9145,
             "n_bthreats": [
-                15,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                12,
-                0,
-                0
-            ]
-        },
-        "(9, 8, False)": {
-            "time": 1.072,
-            "n_bthreats": [
-                15,
+                17,
                 0,
                 0
             ],
@@ -247,119 +242,145 @@
                 0
             ]
         },
-        "(5, 2, True)": {
-            "time": 1.1148,
+        "(5, 3, True)": {
+            "time": 0.2801,
             "n_bthreats": [
-                16,
-                1,
-                0
-            ],
-            "n_wthreats": [
-                13,
-                0,
-                0
-            ]
-        },
-        "(7, 2, False)": {
-            "time": 1.0161,
-            "n_bthreats": [
-                17,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(2, 2, True)": {
-            "time": 1.1298,
-            "n_bthreats": [
-                18,
-                1,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(3, 2, False)": {
-            "time": 1.0183,
-            "n_bthreats": [
-                18,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                0,
-                0
-            ]
-        },
-        "(2, 3, True)": {
-            "time": 1.1639,
-            "n_bthreats": [
-                18,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                16,
-                0,
-                0
-            ]
-        },
-        "(9, 10, False)": {
-            "time": 1.1679,
-            "n_bthreats": [
-                18,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                16,
-                2,
-                0
-            ]
-        },
-        "(12, 7, True)": {
-            "time": 1.0178,
-            "n_bthreats": [
-                20,
-                0,
-                0
-            ],
-            "n_wthreats": [
-                17,
-                1,
-                0
-            ]
-        },
-        "(9, 11, False)": {
-            "time": 1.0115,
-            "n_bthreats": [
-                20,
-                0,
-                0
-            ],
-            "n_wthreats": [
                 19,
                 1,
                 0
+            ],
+            "n_wthreats": [
+                13,
+                0,
+                0
             ]
         },
-        "(9, 12, True)": {
-            "time": 1.0232,
+        "(6, 3, False)": {
+            "time": 2.9395,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                1,
+                0
+            ]
+        },
+        "(5, 4, True)": {
+            "time": 0.1002,
             "n_bthreats": [
                 22,
                 0,
                 0
             ],
             "n_wthreats": [
-                19,
+                14,
+                0,
+                0
+            ]
+        },
+        "(2, 3, False)": {
+            "time": 5.564,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                0,
+                0
+            ]
+        },
+        "(4, 4, True)": {
+            "time": 0.356,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                14,
+                0,
+                0
+            ]
+        },
+        "(5, 5, False)": {
+            "time": 5.3585,
+            "n_bthreats": [
+                21,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                0,
+                0
+            ]
+        },
+        "(4, 2, True)": {
+            "time": 0.3994,
+            "n_bthreats": [
+                22,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                0,
+                0
+            ]
+        },
+        "(4, 6, False)": {
+            "time": 28.0796,
+            "n_bthreats": [
+                22,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                2,
+                0
+            ]
+        },
+        "(2, 8, True)": {
+            "time": 0.1072,
+            "n_bthreats": [
+                24,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                15,
+                1,
+                0
+            ]
+        },
+        "(1, 6, False)": {
+            "time": 1.6439,
+            "n_bthreats": [
+                24,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
+                1,
+                0
+            ]
+        },
+        "(0, 6, True)": {
+            "time": 0.106,
+            "n_bthreats": [
+                25,
+                0,
+                0
+            ],
+            "n_wthreats": [
+                16,
                 1,
                 0
             ]

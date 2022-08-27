@@ -72,7 +72,7 @@ class Player:
         raise NotImplementedError() 
     
 class AIPlayer(Player):
-    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = None, t_weights : dict = None):
+    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = None, t_weights : dict = None, version : int = 1):
         super().__init__()
         if seed is None:
             self.seed = int(time())
@@ -80,6 +80,7 @@ class AIPlayer(Player):
             self.seed = seed
         self.name = self.__class__.__name__
         self.search_depth = search_depth
+        self.version = version
         if t_weights is None:
             self.t_weights = {
                 'forcing' : 100,
@@ -159,7 +160,10 @@ class AIPlayer(Player):
 
         print('ai', self.color,'thinking...')
         maximize = True if self.color == 'black' else False
-        best_move = gomoku_get_best_move(self.game.board_state, maximize, self.t_weights)
+        best_move = gomoku_get_best_move(self.game.board_state,
+                                        maximize,
+                                        self.t_weights,
+                                        version=self.version)
         if not self.game.turn(self,best_move):
             raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
         print('ai', self.color,'done')

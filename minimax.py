@@ -13,7 +13,7 @@ DEFAULT_SEARCH_DEPTH = 2
 THREAT_PRIORITY = [
     [1,1,1,1,1],
     [2,2,2,2],
-    [3,4,5],
+    [3,6,6],
     [6,7],
     [7]
 ]
@@ -84,14 +84,16 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
 
 
 def _get_threat_score(t_info : dict, t_weights : dict):
-    score = THREAT_PRIORITY[t_info['type'][0] - 1][t_info['type'][1] - 1]
+    n = t_info['type'][0] - 1
+    w = t_info['type'][1] - 1
+    score = THREAT_PRIORITY[n if n <= 4 else 4][w if w <= n - 1 else n - 1]
     if t_info['type'] in FORCING_THREAT_TYPES:
         score *= t_weights['forcing']
     if t_info['type'] in NON_FORCING_THREAT_TYPES:
         score *= t_weights['nforcing']
     return score
 
-def gomoku_state_static_eval(state : BoardState, t_weights : dict):
+def gomoku_state_static_eval(state : BoardState, t_weights : dict, version : int = 1):
     score = 0
 
     bl_f_t = state.b_threats['forcing']
@@ -109,24 +111,16 @@ def gomoku_state_static_eval(state : BoardState, t_weights : dict):
     score += bft_score + bnft_score
     score -= wft_score + wnft_score
 
-
-    # wft_score = sum([THREAT_PRIORITY[t.info['type'][0] - 1][ t.info['type'][1] - 1] for t in wh_f_t])
-    # wft_score *= t_weights['forcing']
-    # wnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][ nft.info['type'][1] - 1] for nft in wh_nf_t])
-    # wnft_score *= t_weights['nforcing']
-
-    # bft_score *= t_weights['forcing']
-    # bnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][nft.info['type'][1] - 1] for nft in bl_nf_t])
-    # bnft_score *= t_weights['nforcing']
-
-    # score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
-    # score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
-    
-    # score -= sum([t.info['type'][0] * 10 + 100 for t in wh_f_t])
-    # score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])    
     return score
 
-def minimax(state : BoardState, depth : int, maximize : bool, t_weights : dict, alpha = -math.inf, beta = math.inf) -> float:
+def minimax(state : BoardState,
+            depth : int,
+            maximize : bool,
+            t_weights : dict,
+            alpha : float = -math.inf,
+            beta : float = math.inf,
+            version : int = 1) -> float:
+
     win,winner = gomoku_check_winner(state)
     if win:
         return 1000000000 / (10 - depth) if winner == 'black' else -1000000000 / (10 - depth)
@@ -137,14 +131,21 @@ def minimax(state : BoardState, depth : int, maximize : bool, t_weights : dict, 
     if depth == 0:
         return gomoku_state_static_eval(state, t_weights)
 
+    if version == 2:
+        instersect_score = _get_intersecting_threats_scores(state, children, maximize, t_weights)
+
     if maximize:
         maxEval = -math.inf
         children = gomoku_get_state_children(state,maximize)
-        for child in children:
+
+        for i,child in zip(range(len(children)),children):
             move,_ = child
 
             state.make_move(move, maximize)
             eval = minimax(state, depth - 1, False, t_weights, alpha, beta)
+            if version == 2:
+                eval += instersect_score[i]            
+
             state.unmake_last_move()
 
             maxEval = max(maxEval,eval)
@@ -155,11 +156,14 @@ def minimax(state : BoardState, depth : int, maximize : bool, t_weights : dict, 
     else:
         minEval = math.inf
         children = gomoku_get_state_children(state,maximize)
-        for child in children:
+        for  i,child in zip(range(len(children)),children):
             move,_ = child
 
             state.make_move(move, maximize)            
             eval = minimax(state, depth - 1, True, t_weights, alpha, beta)
+            if version == 2:
+                eval += instersect_score[i]   
+
             state.unmake_last_move()
 
             minEval = min(minEval,eval)
@@ -184,10 +188,7 @@ def gomoku_get_best_move(state : BoardState,
 
     children = gomoku_get_state_children(state,maximize) 
 
-    if version == 1:
-        results = _eval_next_moves_v1(state, children, t_weights, maximize, search_depth)
-    elif version == 2:
-        results = _eval_next_moves_v2(state, children, t_weights, maximize, search_depth)
+    results = _eval_next_moves(state, children, t_weights, maximize, search_depth, version)
     
     if maximize:
         index = np.argmax(results)
@@ -205,10 +206,11 @@ def _get_intersecting_threats_scores(state : BoardState,
                                     maximize: bool,
                                     t_weights : dict):
 
+        #p_threats = state.b_threats if maximize else state.w_threats
         opp_threats = state.w_threats if maximize else state.b_threats
         opp_nf_threats = [t for t in opp_threats['nforcing'] if t.info['type'][0] >= 2]
         pos_to_threat = {}
-        for nft in opp_nf_threats:            
+        for nft in opp_nf_threats:
             cmoves = nft.get_counter_moves_with_offsets()
             for cmove in cmoves:
                 k = str(cmove[0])
@@ -234,40 +236,58 @@ def _get_intersecting_threats_scores(state : BoardState,
                     scores[i] -= int(0.5 * _get_threat_score(next_t_info, t_weights))
         return scores                                
 
-def _eval_next_moves_v2(state : BoardState,
+
+def _eval_next_moves(state : BoardState,
                         children : List[Tuple],
                         t_weights : dict,
                         maximize : bool,
-                        search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
-    
-    evals = _eval_next_moves_v1(state, children, t_weights, maximize, search_depth)
-
-    if len(children) > 1:
-        _get_intersecting_threats_scores(state,children,maximize)
-
- 
-
-def _eval_next_moves_v1(state : BoardState,
-                        children : List[Tuple],
-                        t_weights : dict,
-                        maximize : bool,
-                        search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+                        search_depth : int = DEFAULT_SEARCH_DEPTH,
+                        version : int = 1) -> Tuple[int,int]:
 
     if len(children) == 1:        
         return [0]
     else:
         results = Parallel(n_jobs=6,backend='threading')(delayed(_eval_move)(
-        deepcopy_boardstate(state), child, t_weights, maximize, search_depth - 1) for child in children)
+        deepcopy_boardstate(state), child, t_weights, not maximize, search_depth - 1,version) for child in children)
         return results
 
 def _eval_move(state : BoardState,
                 child : tuple,
                 t_weights : dict, 
                 maximize : bool,
-                search_depth : int):
+                search_depth : int,
+                version : int = 1):
     
     
     state.make_move(child[0], maximize)
-    score = minimax(state,search_depth, not maximize, t_weights)
+    score = minimax(state, search_depth, maximize, t_weights, version)
     state.unmake_last_move()
     return score      
+
+
+# wft_score = sum([THREAT_PRIORITY[t.info['type'][0] - 1][ t.info['type'][1] - 1] for t in wh_f_t])
+# wft_score *= t_weights['forcing']
+# wnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][ nft.info['type'][1] - 1] for nft in wh_nf_t])
+# wnft_score *= t_weights['nforcing']
+# bft_score *= t_weights['forcing']
+# bnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][nft.info['type'][1] - 1] for nft in bl_nf_t])
+# bnft_score *= t_weights['nforcing']
+
+# score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
+# score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
+
+# score -= sum([t.info['type'][0] * 10 + 100 for t in wh_f_t])
+# score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])    
+
+# def _eval_next_moves_v2(state : BoardState,
+#                         children : List[Tuple],
+#                         t_weights : dict,
+#                         maximize : bool,
+#                         search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
+    
+#     evals = _eval_next_moves_v1(state, children, t_weights, maximize, search_depth)
+
+#     if len(children) > 1:
+#         _get_intersecting_threats_scores(state,children,maximize)
+
+ 

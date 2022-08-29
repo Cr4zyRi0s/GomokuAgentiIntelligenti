@@ -149,6 +149,9 @@ class Threat:
         self.angle = angle    
         self.t_func = get_index_transform_func(angle)
 
+    def get_grid_span(self) -> tuple:
+        return (self.t_func(self.span[0]), self.t_func(self.span[1]))
+
     def get_open_slots(self) -> set:
         return {self.t_func(m + self.span[0]) for m in self.info['p_moves']}
 

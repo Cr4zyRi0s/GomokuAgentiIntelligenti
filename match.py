@@ -192,6 +192,11 @@ class ReplayMatch(Match):
 
         advance_turn = lambda x,y : p1.play_turn() if not xor(self.game.black_turn, p1.color == 'black') else p2.play_turn()
         self.gui.add_on_click_callback(advance_turn)
+
+        rollback_turn = lambda x,y : self.game.revert_turn()
+        rollback_turn_player = lambda x,y : self.game.blackPlayer.revert_turn() if not self.game.black_turn else self.game.whitePlayer.revert_turn()
+        self.gui.add_on_right_click_callback(rollback_turn_player)
+        self.gui.add_on_right_click_callback(rollback_turn)
         
         if show_threat_hints:
             update_threat_hints = lambda: draw_threat_hints(self.game,self.gui)

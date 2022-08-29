@@ -105,7 +105,31 @@ def is_valid_move(col : int, row : int, board : np.array) -> bool:
         return False    
     return board[col, row] == 0
 
+def line_intersect(P0, P1, Q0, Q1):  
+    if P0 == Q0:
+        return Q0
+    elif P1 == Q0:
+        return Q0
+    elif P0 == Q1:
+        return Q1
+    elif P1 == Q1:
+        return Q1
+
+    P0 = (float(P0[0]),float(P0[1]))
+    P1 = (float(P1[0]),float(P1[1]))
+    Q0 = (float(Q0[0]),float(Q0[1]))
+    Q1 = (float(Q1[0]),float(Q1[1]))    
+
+    d = (P1[0]-P0[0]) * (Q1[1]-Q0[1]) + (P1[1]-P0[1]) * (Q0[0]-Q1[0]) 
+    if d == 0:
+        return None
+    t = ((Q0[0]-P0[0]) * (Q1[1]-Q0[1]) + (Q0[1]-P0[1]) * (Q0[0]-Q1[0])) / d
+    u = ((Q0[0]-P0[0]) * (P1[1]-P0[1]) + (Q0[1]-P0[1]) * (P0[0]-P1[0])) / d
+    if 0 <= t <= 1 and 0 <= u <= 1:
+        return round(P1[0] * t + P0[0] * (1-t)), round(P1[1] * t + P0[1] * (1-t))
+    return None
+
 if __name__ == '__main__':
-    pass
+    assert line_intersect((0,0),(2,0),(0,1),(1,0)) == (1.0, 0.0)
 
 

@@ -1,8 +1,10 @@
+import itertools
+from ete3 import Tree
 from typing import List, Tuple
 
 from boardstate import BoardState,deepcopy_boardstate, FORCING_THREAT_TYPES, NON_FORCING_THREAT_TYPES
 from threats import generate_dependency_graph, load_precomputed_threats
-from utils import no_moves_possible,replace_char
+from utils import line_intersect, no_moves_possible,replace_char
 from joblib import Parallel,delayed
 
 import math
@@ -14,8 +16,8 @@ THREAT_PRIORITY = [
     [1,1,1,1,1],
     [2,2,2,2],
     [3,6,6],
-    [6,7],
-    [7]
+    [7,8],
+    [8]
 ]
 
 parallel = Parallel(n_jobs=4,backend='threading')
@@ -28,7 +30,7 @@ def gomoku_check_winner(state : BoardState) -> tuple:
     if len(state.b_threats['winning']) > 0:
         return True,'black'
     elif len(state.w_threats['winning']) > 0:
-        return False,'white'
+        return True,'white'
     else:
         return False,''
 
@@ -86,7 +88,10 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
 def _get_threat_score(t_info : dict, t_weights : dict):
     n = t_info['type'][0] - 1
     w = t_info['type'][1] - 1
-    score = THREAT_PRIORITY[n if n <= 4 else 4][w if w <= n - 1 else n - 1]
+    n = n if n <= 4 else 4
+    w = w if w <= n - 1 else n - 1
+
+    score = THREAT_PRIORITY[n][w]
     if t_info['type'] in FORCING_THREAT_TYPES:
         score *= t_weights['forcing']
     if t_info['type'] in NON_FORCING_THREAT_TYPES:
@@ -104,12 +109,32 @@ def gomoku_state_static_eval(state : BoardState, t_weights : dict, version : int
 
     bft_score = sum([_get_threat_score(t.info,t_weights) for t in bl_f_t])
     bnft_score = sum([_get_threat_score(nft.info,t_weights) for nft in bl_nf_t])
+    if version == 2:
+        bhook_score = 0
+        bhooks = state.get_hooks(True)
+        if bhooks is not None:            
+            bhook_score = sum([
+            _get_threat_score(hook[0].info, t_weights)*_get_threat_score(hook[1].info,t_weights)
+            for hook in bhooks])
  
     wft_score = sum([_get_threat_score(t.info,t_weights) for t in wh_f_t])
     wnft_score = sum([_get_threat_score(nft.info,t_weights) for nft in wh_nf_t])
+    if version == 2:
+        whook_score = 0
+        whooks = state.get_hooks(False)
+        if whooks is not None:
+            whook_score = sum([
+            _get_threat_score(hook[0].info, t_weights)*_get_threat_score(hook[1].info,t_weights)
+            for hook in whooks])
+ 
 
     score += bft_score + bnft_score
+    if version == 2:
+        score += bhook_score
+
     score -= wft_score + wnft_score
+    if version == 2:
+        score -= whook_score
 
     return score
 
@@ -129,10 +154,10 @@ def minimax(state : BoardState,
         return 0
     
     if depth == 0:
-        return gomoku_state_static_eval(state, t_weights)
+        return gomoku_state_static_eval(state, t_weights,version=version)
 
-    if version == 2:
-        instersect_score = _get_intersecting_threats_scores(state, children, maximize, t_weights)
+    # if version == 2:
+    #     instersect_score = _get_hook_scores(state, children, maximize, t_weights)
 
     if maximize:
         maxEval = -math.inf
@@ -142,9 +167,9 @@ def minimax(state : BoardState,
             move,_ = child
 
             state.make_move(move, maximize)
-            eval = minimax(state, depth - 1, False, t_weights, alpha, beta)
-            if version == 2:
-                eval += instersect_score[i]            
+            eval = minimax(state, depth - 1, False, t_weights, alpha, beta,version=version)
+            # if version == 2:
+            #     eval += instersect_score[i]            
 
             state.unmake_last_move()
 
@@ -160,9 +185,9 @@ def minimax(state : BoardState,
             move,_ = child
 
             state.make_move(move, maximize)            
-            eval = minimax(state, depth - 1, True, t_weights, alpha, beta)
-            if version == 2:
-                eval += instersect_score[i]   
+            eval = minimax(state, depth - 1, True, t_weights, alpha, beta,version=version)
+            # if version == 2:
+            #     eval += instersect_score[i]   
 
             state.unmake_last_move()
 
@@ -186,57 +211,23 @@ def gomoku_get_best_move(state : BoardState,
         if ft.info['type'][0] == 4:      
             return list(ft.get_counter_moves())[0]
 
-    children = gomoku_get_state_children(state,maximize) 
-
+    children = gomoku_get_state_children(state,maximize)
     results = _eval_next_moves(state, children, t_weights, maximize, search_depth, version)
     
     if maximize:
-        index = np.argmax(results)
+        index = np.argmax(results)                
     else:
         index = np.argmin(results)
 
+    print('Black options:' if maximize else 'White options:')
+    print(children[index], results[index])
     best = children[index][0]  
 
     print('elapsed time: ', time.time() - start_time)
     return best
 
 
-def _get_intersecting_threats_scores(state : BoardState,
-                                    children : List[Tuple],
-                                    maximize: bool,
-                                    t_weights : dict):
-
-        #p_threats = state.b_threats if maximize else state.w_threats
-        opp_threats = state.w_threats if maximize else state.b_threats
-        opp_nf_threats = [t for t in opp_threats['nforcing'] if t.info['type'][0] >= 2]
-        pos_to_threat = {}
-        for nft in opp_nf_threats:
-            cmoves = nft.get_counter_moves_with_offsets()
-            for cmove in cmoves:
-                k = str(cmove[0])
-                if k not in pos_to_threat:
-                    pos_to_threat[k] = []
-
-                if maximize:
-                    next_t_seq = replace_char(nft.group, cmove[1], '1')
-                    next_t = state.b_threats_info[next_t_seq]
-                else:
-                    next_t_seq = replace_char(nft.group, cmove[1], '2')
-                    next_t = state.w_threats_info[next_t_seq]
-
-                pos_to_threat[k].append((nft,next_t))
-
-        scores = [0 for _ in range(len(children))]
-        for i,child in zip(range(len(children)),children):
-            pos,_ = child
-            for t,next_t_info in pos_to_threat[str(pos)]:
-                if maximize:
-                    scores[i] += int(0.5 * _get_threat_score(next_t_info, t_weights))
-                else:
-                    scores[i] -= int(0.5 * _get_threat_score(next_t_info, t_weights))
-        return scores                                
-
-
+        
 def _eval_next_moves(state : BoardState,
                         children : List[Tuple],
                         t_weights : dict,
@@ -248,7 +239,7 @@ def _eval_next_moves(state : BoardState,
         return [0]
     else:
         results = Parallel(n_jobs=6,backend='threading')(delayed(_eval_move)(
-        deepcopy_boardstate(state), child, t_weights, not maximize, search_depth - 1,version) for child in children)
+        deepcopy_boardstate(state), child, t_weights, maximize, search_depth - 1,version) for child in children)
         return results
 
 def _eval_move(state : BoardState,
@@ -256,38 +247,50 @@ def _eval_move(state : BoardState,
                 t_weights : dict, 
                 maximize : bool,
                 search_depth : int,
-                version : int = 1):
+                version : int = 1,
+                debug : bool = False):    
     
-    
+
     state.make_move(child[0], maximize)
-    score = minimax(state, search_depth, maximize, t_weights, version)
+    score = minimax(state, search_depth, not maximize, t_weights, version=version)
     state.unmake_last_move()
     return score      
 
 
-# wft_score = sum([THREAT_PRIORITY[t.info['type'][0] - 1][ t.info['type'][1] - 1] for t in wh_f_t])
-# wft_score *= t_weights['forcing']
-# wnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][ nft.info['type'][1] - 1] for nft in wh_nf_t])
-# wnft_score *= t_weights['nforcing']
-# bft_score *= t_weights['forcing']
-# bnft_score = sum([THREAT_PRIORITY[nft.info['type'][0] - 1][nft.info['type'][1] - 1] for nft in bl_nf_t])
-# bnft_score *= t_weights['nforcing']
+# def _get_hook_scores(state : BoardState,
+#                     children : List[Tuple],                    
+#                     t_weights : dict):
 
-# score += sum([t.info['type'][0] * 10 + 100 for t in bl_f_t])   
-# score += sum([nft.info['type'][0] ^ 2 for nft in bl_nf_t])
+#         b_phooks_pos = _get_potential_hooks(state,True)
+#         w_phooks_pos = _get_potential_hooks(state,False)
 
-# score -= sum([t.info['type'][0] * 10 + 100 for t in wh_f_t])
-# score -= sum([nft.info['type'][0] ^ 2 for nft in wh_nf_t])    
+#         scores = [0 for _ in range(len(children))]
+#         for i,child in zip(range(len(children)),children):
+#             pos,_ = child
+#             for t,next_t_info in b_phooks_pos:
+#                 scores[i] += int(0.5 * _get_threat_score(next_t_info, t_weights))
+#             for t,next_t_info in w_phooks_pos:
+#                 scores[i] -= int(0.5 * _get_threat_score(next_t_info, t_weights))
+#         return scores          
 
-# def _eval_next_moves_v2(state : BoardState,
-#                         children : List[Tuple],
-#                         t_weights : dict,
-#                         maximize : bool,
-#                         search_depth : int = DEFAULT_SEARCH_DEPTH) -> Tuple[int,int]:
-    
-#     evals = _eval_next_moves_v1(state, children, t_weights, maximize, search_depth)
+# def _get_potential_hooks(state : BoardState,
+#                         maximize : bool):
+#     p_threats = state.b_threats if maximize else state.w_threats
+#     p_nf_threats = [t for t in p_threats['nforcing'] if t.info['type'][0] >= 2]
+#     pos_to_threat = {}
+#     for nft in p_nf_threats:
+#         cmoves = nft.get_counter_moves_with_offsets()
+#         for cmove in cmoves:
+#             k = str(cmove[0])
+#             if k not in pos_to_threat:
+#                 pos_to_threat[k] = []
 
-#     if len(children) > 1:
-#         _get_intersecting_threats_scores(state,children,maximize)
+#             if maximize:
+#                 next_t_seq = replace_char(nft.group, cmove[1], '1')
+#                 next_t = state.b_threats_info[next_t_seq]
+#             else:
+#                 next_t_seq = replace_char(nft.group, cmove[1], '2')
+#                 next_t = state.w_threats_info[next_t_seq]
 
- 
+#             pos_to_threat[k].append((nft,next_t))
+#         return pos_to_threat

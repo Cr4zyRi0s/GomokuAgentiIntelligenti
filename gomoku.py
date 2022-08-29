@@ -175,9 +175,9 @@ class Game:
         return False
 
     def revert_turn(self):
-        self.new_turn()
         self.board_state.unmake_last_move()
         self.winning_player = None
+        self.new_turn()
         self.gui_draw()   
 
     def new_turn(self):

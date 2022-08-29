@@ -336,6 +336,9 @@ class ReplayPlayer(Player):
         move = (move[0], move[1])
         self.last_move_index += 1
         assert self.game.turn(self, move) , 'Expected to play move (%d,%d) but couldn\'t' % (move[0], move[1])
+    
+    def revert_turn(self):
+        self.last_move_index -= 1
 
 
 if __name__ == '__main__':

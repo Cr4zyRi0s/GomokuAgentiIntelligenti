@@ -1,4 +1,5 @@
 from copy import copy, deepcopy
+import itertools
 import numpy as np
 import re
 
@@ -89,7 +90,27 @@ class BoardState:
         #self._update_threats(move, is_black)
         self._update_threats(move)
         self.moves.append((*move,is_black))
-        
+
+    def get_hooks(self,
+                maximize : bool):
+        p_threats = self.b_threats if maximize else self.w_threats
+        #p_threat_list = [t for t in p_threats['nforcing'] if t.info['type'][0] >= 2]
+        p_threat_list = [t for t in p_threats['forcing']]
+        hooks = []
+        for t0, t1 in itertools.combinations(p_threat_list,r=2):
+            p0,p1 = t0.get_grid_span()
+            q0,q1 = t1.get_grid_span()
+            intersect = line_intersect(p0,p1,q0,q1)
+            if intersect is not None:
+                intersect = (int(intersect[0]),int(intersect[1]))
+                if intersect[0] > 14 or intersect[1] > 14:
+                    raise Exception('intersection out of grid')
+                if maximize and self.grid[intersect[0], intersect[1]] == 1:
+                    hooks.append((t0,t1))
+                elif not maximize and self.grid[intersect[0], intersect[1]] == 2:
+                    hooks.append((t0,t1))
+
+
     def unmake_last_move(self):
         c,r,_ = self.moves.pop()
 

@@ -1,3 +1,4 @@
+from operator import xor
 from boardstate import BoardState
 from match import Match, draw_threat_hints
 from gomoku import Game,check_winning_condition
@@ -44,17 +45,22 @@ def ai_play(game: Game):
         game.whitePlayer.play_turn()
 
 if __name__ == "__main__":
-    ai_white = AIPlayer(search_depth=4)
-    ai_black = AIRandomPlayer()
+    ai_white = AIPlayer(search_depth=3,version=1)
+    ai_black = AIPlayer(search_depth=5,version=1)
     human  = HumanPlayer()
 
-    match = Match(human,ai_white,save_match_data=True)
+    match = Match(ai_black,ai_white,save_match_data=True)
     
     update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
     match.game.add_turn_change_callback(update_threat_hints)
+
+    advance_turn = lambda x,y : ai_black.play_turn() if not xor(match.game.black_turn, ai_black.color == 'black') else ai_white.play_turn()
+    match.gui.add_on_click_callback(advance_turn)
+
+    rollback_turn = lambda x,y : match.game.revert_turn()
+    match.gui.add_on_right_click_callback(rollback_turn)
         
     while True:        
         match.update()
-        ai_play(match.game)
         pygame.time.wait(100)
         

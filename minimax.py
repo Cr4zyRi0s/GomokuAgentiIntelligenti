@@ -1,10 +1,7 @@
-import itertools
-from ete3 import Tree
 from typing import List, Tuple
 
 from boardstate import BoardState,deepcopy_boardstate, FORCING_THREAT_TYPES, NON_FORCING_THREAT_TYPES
-from threats import generate_dependency_graph, load_precomputed_threats
-from utils import line_intersect, no_moves_possible,replace_char
+from utils import no_moves_possible
 from joblib import Parallel,delayed
 
 import math
@@ -21,9 +18,6 @@ THREAT_PRIORITY = [
 ]
 
 parallel = Parallel(n_jobs=4,backend='threading')
-b_threat_data, w_threat_data = load_precomputed_threats()
-#b_threat_dep = generate_dependency_graph(b_threat_data)
-#w_threat_dep = generate_dependency_graph(w_threat_data)
 
 
 def gomoku_check_winner(state : BoardState) -> tuple:
@@ -128,6 +122,7 @@ def gomoku_state_static_eval(state : BoardState, t_weights : dict, version : int
             for hook in whooks])
  
 
+    
     score += bft_score + bnft_score
     if version == 2:
         score += bhook_score
@@ -250,7 +245,6 @@ def _eval_move(state : BoardState,
                 version : int = 1,
                 debug : bool = False):    
     
-
     state.make_move(child[0], maximize)
     score = minimax(state, search_depth, not maximize, t_weights, version=version)
     state.unmake_last_move()

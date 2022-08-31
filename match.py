@@ -7,7 +7,7 @@ from boardstate import BoardState
 from players import Player, ReplayPlayer
 from gomoku import Game, check_winning_condition
 from gui import GUIHandler
-from utils import generate_random_string, get_index_transform_func
+from utils import generate_random_string, get_index_transform_func, no_moves_possible
 from operator import xor
 
 def print_threats_of_player(game : Game, black : bool):
@@ -36,6 +36,15 @@ def draw_threat_hints(game : Game, gui : GUIHandler):
     gui.reset_threat_hints()
     draw_threats_for_player(game,gui,True)
     draw_threats_for_player(game,gui,False)
+
+            
+def _draw_current_hooks(game: Game, gui : GUIHandler):
+    gui.reset_hooks()
+    state = game.board_state
+    hooks = state.get_hooks(True)
+    hooks.extend(state.get_hooks(False))
+    for h in hooks:
+        gui.add_hook(h)
 
 last_time = time()
 
@@ -199,18 +208,20 @@ class ReplayMatch(Match):
         self.gui.add_on_right_click_callback(rollback_turn)
         
         if show_threat_hints:
-            update_threat_hints = lambda: draw_threat_hints(self.game,self.gui)
-            self.game.add_turn_change_callback(update_threat_hints)
+            draw_all_threat_hints = lambda: draw_threat_hints(self.game,self.gui)
+            self.game.add_turn_change_callback(draw_all_threat_hints)
+            draw_all_hooks = lambda: _draw_current_hooks(self.game,self.gui)
+            self.game.add_turn_change_callback(draw_all_hooks)
         
         if print_forcing_threats:
             print_black_forcing_threats = lambda: print_threats_of_player(self.game,True)
             print_white_forcing_threats = lambda: print_threats_of_player(self.game,False)
             self.game.add_turn_change_callback(print_black_forcing_threats)
             self.game.add_turn_change_callback(print_white_forcing_threats)
-            
+
 
     def is_over(self) -> bool:
-        return check_winning_condition(self.game)
+        return check_winning_condition(self.game) or no_moves_possible(self.game.board_state.grid)
         
 
 if __name__ == '__main__':

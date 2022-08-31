@@ -9,6 +9,8 @@ from boardstate import FORCING_THREAT_TYPES
 import pygame
 import re
 
+from utils import no_moves_possible
+
 last_move = (0,0)
 
 def print_threats_of_player(game : Game, black : bool):
@@ -37,7 +39,7 @@ def print_lines_of_last_moves(game : Game):
         print('-------------------\n')    
 
 def ai_play(game: Game):
-    if check_winning_condition(game):
+    if check_winning_condition(game) or no_moves_possible(game.board_state.grid):
         return
     if isinstance(game.blackPlayer,AIPlayer) and game.black_turn:
         game.blackPlayer.play_turn()

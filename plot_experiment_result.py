@@ -140,7 +140,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-v2-test5'
+    experiment_name = 'experiment-v2-test'
     create_experiment_imgs(experiment_path,experiment_name)
 
 

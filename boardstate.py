@@ -2,36 +2,19 @@ from copy import copy, deepcopy
 import itertools
 import numpy as np
 import re
-
 from tqdm import tqdm
-
 from utils import *
-
-from threats import Threat, load_precomputed_threats
+from threats import (
+B_THREAT_DATA,
+W_THREAT_DATA, 
+Threat, 
+_get_threat_class_from_info, 
+load_precomputed_threats
+)
 
 BLACK_SEQUENCE_RGX = '[01]{5,}'
 WHITE_SEQUENCE_RGX = '[02]{5,}'
 
-WINNING_THREAT_TYPES = [(5,1)]
-FORCING_THREAT_TYPES = [(4,2),(4,1),(3,3),(3,2)]
-NON_FORCING_THREAT_TYPES = [(3,1)]
-for i in range(1,3):
-    NON_FORCING_THREAT_TYPES.extend([(i,j) for j in range(1, 6 - i + 1)])
-
-b_threats_info = None
-w_threats_info = None
-
-def check_correctness(threat : Threat, bucket : str):
-    type = threat.info['type']
-    if type in WINNING_THREAT_TYPES:
-        if bucket != 'winning':
-            raise Exception('wrong threat identification (%s != %s)' % (bucket,'winning'))
-    elif type in FORCING_THREAT_TYPES:
-        if bucket != 'forcing':
-            raise Exception('wrong threat identification (%s != %s)' % (bucket,'forcing'))
-    else:
-        if bucket != 'nforcing':
-            raise Exception('wrong threat identification (%s != %s)' % (bucket,'nforcing'))
 
 def get_threat_priority_from_type(type : tuple) -> str:
     if type[0] == 5:
@@ -52,13 +35,10 @@ def get_threat_priority_from_type(type : tuple) -> str:
 
 class BoardState:
     def __init__(self,size = 15, copy_instance = False):
-        global b_threats_info
-        global w_threats_info
-
-        if b_threats_info is None or w_threats_info is None:
-            b_threats_info, w_threats_info = load_precomputed_threats()
-        self.b_threats_info = b_threats_info
-        self.w_threats_info = w_threats_info
+        # if b_threats_info is None or w_threats_info is None:
+        #     b_threats_info, w_threats_info = load_precomputed_threats()
+        # self.b_threats_info = b_threats_info
+        # self.w_threats_info = w_threats_info
 
         if not copy_instance:
             self.size = size    
@@ -109,6 +89,7 @@ class BoardState:
                     hooks.append((t0,t1))
                 elif not maximize and self.grid[intersect[0], intersect[1]] == 2:
                     hooks.append((t0,t1))
+        return hooks
 
 
     def unmake_last_move(self):
@@ -118,25 +99,6 @@ class BoardState:
         self._update_boards((c,r), '0')
         self._update_threats((c,r))
 
-        #updt = self.threat_updates[str((c,r))]
-
-        #print(c,r,is_black)
-        #print(updt)
-        # try:
-        #     for add in updt['white']['added']:
-        #         self.w_threats[add[1]].remove(add[0])
-        #     for rem in updt['white']['removed']:
-        #         self.w_threats[rem[1]].add(rem[0])
-        # except KeyError:        
-        #     pass
-
-        # try:
-        #     for add in updt['black']['added']:
-        #         self.b_threats[add[1]].remove(add[0])
-        #     for rem in updt['black']['removed']:
-        #         self.b_threats[rem[1]].add(rem[0])
-        # except KeyError:
-        #     pass
 
     def get_all_threats(self, black : bool) -> tuple:         
         raise NotImplementedError()
@@ -189,45 +151,12 @@ class BoardState:
 
         self._find_threats_intersecting(lines,spans,True)
         self._find_threats_intersecting(lines,spans,False)
-        
 
-
-    # def _update_threats(self, last_move : tuple, black : bool):                
-    #     #check new threats in intersecting lines
-    #     span, line = self._get_line(last_move)
-    #     span90, line90 = self._get_line90(last_move)
-    #     span45, line45 = self._get_line45(last_move)
-    #     span315, line315 = self._get_line315(last_move)
-
-    #     spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
-    #     self.threat_updates[str(last_move)] = {
-    #         'black': {
-    #             'added' : set(),
-    #             'removed' : self._prune_old_threats(spans, True)
-    #         },  
-    #         'white' : {
-    #             'added' : set(),
-    #             'removed' :self._prune_old_threats(spans, False) 
-    #         }
-    #     }
-
-    #     # self._prune_old_threats(spans, True)
-    #     # self._prune_old_threats(spans, False)   
-        
-    #     ts = self.b_threats if black else self.w_threats
-
-    #     added_threats = set()
-    #     added_threats.update(self._get_threats_in_repr(ts, line, black, span[0], 0))
-    #     added_threats.update(self._get_threats_in_repr(ts, line90, black, span90[0], 90))
-    #     added_threats.update(self._get_threats_in_repr(ts, line45, black, span45[0], 45))
-    #     added_threats.update(self._get_threats_in_repr(ts, line315, black, span315[0], 315))
-
-    #     self.threat_updates[str(last_move)]['black' if black else 'white']['added'] = added_threats
 
     def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
         rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
-        t_info = self.b_threats_info if black else self.w_threats_info
-        added = set()
+        t_info = B_THREAT_DATA if black else W_THREAT_DATA
+        #added = set()
         for match in re.finditer(rgx, repr):
             group = match.group()
             l = len(group)            
@@ -236,18 +165,19 @@ class BoardState:
                 info = t_info[group]                
                 span = (match.span()[0] + offset, match.span()[1] + offset)
                 threat = Threat(group,info,span,angle)
-                if info['type'] in WINNING_THREAT_TYPES:
+                t_class = _get_threat_class_from_info(info)
+                if t_class == 'winning':
                     dst['winning'].add(threat)
-                    added.add((threat, 'winning'))
-                elif info['type'] in FORCING_THREAT_TYPES:
+                    #added.add((threat, 'winning'))
+                elif t_class == 'forcing':
                     dst['forcing'].add(threat)
-                    added.add((threat, 'forcing'))
+                    #added.add((threat, 'forcing'))
                 else:
                     dst['nforcing'].add(threat)    
-                    added.add((threat, 'nforcing'))
-        for add in added:
-            check_correctness(add[0], add[1])
-        return added
+                    #added.add((threat, 'nforcing'))
+        # for add in added:
+        #     check_correctness(add[0], add[1])
+        #return added
 
     def _get_threats(self, black : bool):
         threats = self.b_threats if black else self.w_threats
@@ -380,3 +310,76 @@ if __name__ == '__main__':
 
     test_deep_copy()
     test_deep_copy2()
+
+
+
+
+
+            
+
+
+    # def _update_threats(self, last_move : tuple, black : bool):                
+    #     #check new threats in intersecting lines
+    #     span, line = self._get_line(last_move)
+    #     span90, line90 = self._get_line90(last_move)
+    #     span45, line45 = self._get_line45(last_move)
+    #     span315, line315 = self._get_line315(last_move)
+
+    #     spans = {0 : span, 45 : span45, 90 : span90, 315 : span315}
+    #     self.threat_updates[str(last_move)] = {
+    #         'black': {
+    #             'added' : set(),
+    #             'removed' : self._prune_old_threats(spans, True)
+    #         },  
+    #         'white' : {
+    #             'added' : set(),
+    #             'removed' :self._prune_old_threats(spans, False) 
+    #         }
+    #     }
+
+    #     # self._prune_old_threats(spans, True)
+    #     # self._prune_old_threats(spans, False)   
+        
+    #     ts = self.b_threats if black else self.w_threats
+
+    #     added_threats = set()
+    #     added_threats.update(self._get_threats_in_repr(ts, line, black, span[0], 0))
+    #     added_threats.update(self._get_threats_in_repr(ts, line90, black, span90[0], 90))
+    #     added_threats.update(self._get_threats_in_repr(ts, line45, black, span45[0], 45))
+    #     added_threats.update(self._get_threats_in_repr(ts, line315, black, span315[0], 315))
+
+    #     self.threat_updates[str(last_move)]['black' if black else 'white']['added'] = added_threats
+
+    
+# def check_correctness(threat : Threat, bucket : str):
+#     type = threat.info['type']
+#     if type in WINNING_THREAT_TYPES:
+#         if bucket != 'winning':
+#             raise Exception('wrong threat identification (%s != %s)' % (bucket,'winning'))
+#     elif type in FORCING_THREAT_TYPES:
+#         if bucket != 'forcing':
+#             raise Exception('wrong threat identification (%s != %s)' % (bucket,'forcing'))
+#     else:
+#         if bucket != 'nforcing':
+#             raise Exception('wrong threat identification (%s != %s)' % (bucket,'nforcing'))
+
+
+        #updt = self.threat_updates[str((c,r))]
+
+        #print(c,r,is_black)
+        #print(updt)
+        # try:
+        #     for add in updt['white']['added']:
+        #         self.w_threats[add[1]].remove(add[0])
+        #     for rem in updt['white']['removed']:
+        #         self.w_threats[rem[1]].add(rem[0])
+        # except KeyError:        
+        #     pass
+
+        # try:
+        #     for add in updt['black']['added']:
+        #         self.b_threats[add[1]].remove(add[0])
+        #     for rem in updt['black']['removed']:
+        #         self.b_threats[rem[1]].add(rem[0])
+        # except KeyError:
+        #     pass

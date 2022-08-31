@@ -1,11 +1,16 @@
 import itertools
 import re
 import networkx as nx
-import time
 import json 
 from tqdm import tqdm
-
 from utils import get_index_transform_func
+
+
+WINNING_THREAT_TYPES = [(5,1)]
+FORCING_THREAT_TYPES = [(4,2),(4,1),(3,3),(3,2)]
+NON_FORCING_THREAT_TYPES = [(3,1)]
+for i in range(1,3):
+    NON_FORCING_THREAT_TYPES.extend([(i,j) for j in range(1, 6 - i + 1)])
 
 def replace_char(string : str, index : int, char):
     return string[:index] + char + string[index + 1:]
@@ -181,18 +186,51 @@ class Threat:
             self.angle
             )
 
+def _get_threat_class(threat:Threat):
+    info = threat.info
+    return _get_threat_class_from_info(info)
+
+def _get_threat_class_from_info(info:dict):
+    n = info['type'][0]
+    w = info['type'][1]
+    n = n if n <= 5 else 5
+    w = w if w <= 6 - n else 6 - n
+    
+    if (n,w) in WINNING_THREAT_TYPES:
+        return 'winning'
+    elif (n,w) in FORCING_THREAT_TYPES:
+        return 'forcing'
+    else:
+        return 'nforcing'
+    
+    
+
+
 if __name__ == '__main__':
-    start_time = time.time()
+    # start_time = time.time()
     # threats = precompute_threats(15)
     # store_precomputed_threats(threats)
-    b_threats, w_threats = load_precomputed_threats()
+    # b_threats, w_threats = load_precomputed_threats()
     
-    b_graph = generate_dependency_graph(b_threats)
-    print(b_graph.number_of_nodes(), b_graph.number_of_edges())
+    # b_graph = generate_dependency_graph(b_threats)
+    # print(b_graph.number_of_nodes(), b_graph.number_of_edges())
         
-    w_graph = generate_dependency_graph(w_threats, False)
-    print(w_graph.number_of_nodes(), w_graph.number_of_edges())
-    for t in b_threats:
-        pass
+    # w_graph = generate_dependency_graph(w_threats, False)
+    # print(w_graph.number_of_nodes(), w_graph.number_of_edges())
+    # for t in b_threats:
+    #     pass
 
-    print('elapsed time:', round(time.time() - start_time,4))
+    # print('elapsed time:', round(time.time() - start_time,4))
+    info0 = {'type' : (3,5)}
+    assert _get_threat_class_from_info(info0) == 'forcing'
+    info0 = {'type' : (3,1)}
+    assert _get_threat_class_from_info(info0) == 'nforcing'
+    info0 = {'type' : (1,5)}
+    assert _get_threat_class_from_info(info0) == 'nforcing'
+    info0 = {'type' : (5,1)}
+    assert _get_threat_class_from_info(info0) == 'winning'
+
+
+B_THREAT_DATA, W_THREAT_DATA = load_precomputed_threats()
+B_THREAT_DEP = generate_dependency_graph(B_THREAT_DATA)
+W_THREAT_DEP = generate_dependency_graph(W_THREAT_DATA)

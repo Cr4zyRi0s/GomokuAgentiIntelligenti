@@ -1,10 +1,10 @@
-import json
 from operator import xor
 import random
+from threats import B_THREAT_DATA, W_THREAT_DEP, B_THREAT_DEP, _get_threat_class_from_info
 from time import time
 from utils import is_valid_move
-from boardstate import deepcopy_boardstate
 from minimax import DEFAULT_SEARCH_DEPTH, gomoku_get_best_move, gomoku_state_static_eval
+import networkx as nx
 
 def place_random_stones(board, n_stones : int) -> list:
     positions = []
@@ -105,16 +105,29 @@ class AIPlayer(Player):
 
     def swap2_accept_or_place(self):
         bstate = self.game.board_state
-        bl_nft = bstate.b_threats['nforcing'] 
+        #bl_nft = bstate.b_threats['nforcing'] 
 
-        for t in bl_nft:
-            if t.info['type'][0] > 1:
-                break
-        else:
-            self.game.swap2_accept_or_place(self,'white')           
+        # for t in bl_nft:
+        #     if t.info['type'][0] > 1:
+        #         break
+        # else:
+        #     self.game.swap2_accept_or_place(self,'white')           
+        #     return
+        move=gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth,self.version)
+        bstate.make_move(move,False)
+        eval=gomoku_state_static_eval(bstate,t_weights=self.t_weights,version=self.version)        
+    
+        if abs(eval) <= 0:
+            # for bt in bstate.b_threats['nforcing']: 
+            #     for next_bt in B_THREAT_DEP[bt.group]:
+            #         next_bt_info = B_THREAT_DATA[next_bt]
+            #         if _get_threat_class_from_info(next_bt_info) == 'forcing':
+            #             self.game.swap2_accept_or_place('black')
+            #             return
+            self.game.swap2_accept_or_place('white')
             return
-        
-        self.game.swap2_accept_or_place(self,'place')  
+        else:             
+            self.game.swap2_accept_or_place(self,'black')  
                 
     def swap2_second_place_stones(self):     
         bstate = self.game.board_state        

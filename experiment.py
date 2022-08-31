@@ -10,6 +10,8 @@ from gomoku import check_winning_condition
 from match import Match
 from tqdm import tqdm
 
+from utils import no_moves_possible
+
 class Experiment:
     def __init__(self, experiment_name : str, player_defs : Dict[str,dict], repetitions : int = 10, experiment_data_path : str = 'experiments'):
         self.player_types = self._get_player_types()
@@ -47,7 +49,10 @@ class Experiment:
             for _ in tqdm(range(self.repetitions), desc='Simulating matches - %s vs. %s' % (m[0],m[1])):
                 curr_match = Match(p_black, p_white, gui_enabled=False,save_match_data=True,match_data_path=self.full_path)                                
                 curr_match.tags = [black_id + '_bl', white_id + '_wh']
-                while not check_winning_condition(curr_match.game):
+                while not (
+                check_winning_condition(curr_match.game) or
+                no_moves_possible(curr_match.game.board_state.grid)
+                ):
                     sleep(1)
                     if curr_match.game.black_turn:
                         p_black.play_turn()

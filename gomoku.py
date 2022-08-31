@@ -169,6 +169,11 @@ class Game:
                 self.winning_player = player.color
                 for cback in self.on_game_end_callbacks:
                     cback()
+            if no_moves_possible(self.board_state.grid):
+                self.winning_player = 'Draw'
+                for cback in self.on_game_end_callbacks:
+                    cback()
+
             self.new_turn()
             self.gui_draw()
             return True
@@ -187,8 +192,6 @@ class Game:
 
 def check_winning_condition(game : Game):
     if len(game.board_state.b_threats['winning']) > 0 or len(game.board_state.w_threats['winning']) > 0:
-        return True
-    elif no_moves_possible(game.board_state.grid):
         return True
     return False
 

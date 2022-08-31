@@ -96,6 +96,7 @@ class GUIHandler:
         self.start_points, self.end_points = make_grid(self.game.size)
         self.humanPlayers = [p for p in [game.blackPlayer,game.whitePlayer] if isinstance(p, HumanPlayer)]
         self.buttons = buttons
+        self.hooks = []
         self.reset_threat_hints()
         self.winning_streak_lines = []
         self.on_click_callbacks = []
@@ -109,9 +110,14 @@ class GUIHandler:
 
     def reset_threat_hints(self):
         self.threat_hints = {i : [] for i in range(1,6)}
+    def reset_hooks(self):
+        self.hooks.clear()
 
     def add_threat_hint(self, col, row, t_level):
         self.threat_hints[t_level].append((col,row))
+
+    def add_hook(self, hook):
+        self.hooks.append(hook)
 
     def remove_threat_hint(self, col, row, t_level):
         self.threat_hints[t_level].remove((col,row))
@@ -156,6 +162,24 @@ class GUIHandler:
 
     def _draw_threat_hint(self, col : int, row : int, t_level: int):
         self._draw_stone(col,row,THREAT_COLORS[t_level])
+
+    def _draw_hooks(self):
+        grid_size = self.game.board_state.grid.shape[0]
+        for hook in self.hooks:
+            t0 = hook[0]
+            t1 = hook[1]
+
+            s0,e0 = t0.get_grid_span()
+            s1,e1 = t1.get_grid_span()
+
+            s0c = colrow_to_xy(*s0,grid_size)
+            e0c = colrow_to_xy(*e0,grid_size)
+            s1c = colrow_to_xy(*s1,grid_size)
+            e1c = colrow_to_xy(*e1,grid_size)
+
+            pygame.draw.line(self.screen,(0,0,255),s0c,e0c,3)
+            pygame.draw.line(self.screen,(0,0,255),s1c,e1c,3)
+
 
     def draw(self):
         # draw stones - filled circle and antialiased ring
@@ -222,6 +246,7 @@ class GUIHandler:
         for lvl,hints in self.threat_hints.items():
             for h in hints:
                 self._draw_threat_hint(*h, lvl)
+        self._draw_hooks()
         pygame.display.flip()
 
     def clear_screen(self):

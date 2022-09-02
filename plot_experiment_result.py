@@ -122,6 +122,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
         fig.savefig(join(newPath,'TimeImg',img))
 
 def create_winner_graph(experiment_path, experiment_name):
+    plt.rcParams['axes.facecolor'] = '#FFFFFF'
     newPath = join('images', experiment_name)
 
     if not os.path.exists(newPath):
@@ -129,62 +130,117 @@ def create_winner_graph(experiment_path, experiment_name):
             os.makedirs(newPath+'/TimeImg')
 
     full_experiment_path = join(experiment_path,experiment_name)
-    bwins = 0
-    wwins = 0
-    draws = 0
 
-    moves_stats = {
-        'black' : [],
-        'white' : []
-    }
+    match_list = os.listdir(full_experiment_path)
+    match_types_set = set([' '.join(mname.split('_')[1:5]) for mname in match_list])
+    
+    for match_type in match_types_set:
+        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()] 
+        bwins = 0
+        wwins = 0
+        draws = 0
 
-    for matchn in os.listdir(full_experiment_path):
-        with open(os.path.join(full_experiment_path,matchn),'r') as mjson:
-            mdata = json.load(mjson)
-            win = mdata['winner'].lower()
-            nmoves = len(mdata['moves'])
-            if win == 'black':
-                moves_stats['black'].append(nmoves)
-                bwins += 1
-            elif win == 'white':
-                moves_stats['white'].append(nmoves)
-                wwins += 1
-            elif win == 'draw':
-                draws += 1
+        moves_stats = {
+            'black' : [],
+            'white' : []
+        }
+        for mname in match_names:
+            with open(os.path.join(full_experiment_path,mname),'r') as mjson:
+                mdata = json.load(mjson)
+                win = mdata['winner'].lower()
+                nmoves = len(mdata['moves'])
+                if win == 'black':
+                    moves_stats['black'].append(nmoves)
+                    bwins += 1
+                elif win == 'white':
+                    moves_stats['white'].append(nmoves)
+                    wwins += 1
+                elif win == 'draw':
+                    draws += 1
+            
+        #WIN COUNTS
+        fig, ax = plt.subplots()
+
+        bar_labels = ('Black', 'White', 'Draw')
+        y_pos = np.arange(len(bar_labels))
+
+        win_data = [bwins,wwins,draws]
+        bars = ax.barh(y_pos, win_data, align='center',color = [(0.9,0.5,0.1),(0.1,0.1,0.9),(0.5,0,0.5)])
+        ax.set_yticks(y_pos, labels=bar_labels)
+        ax.invert_yaxis()  # labels read top-to-bottom
+        ax.set_xlabel('Wins')
+        ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Win Statistics")
         
-    #WIN COUNTS
-    fig, ax = plt.subplots()
+        ax.bar_label(bars,win_data)
 
-    bar_labels = ('Black', 'White', 'Draw')
-    y_pos = np.arange(len(bar_labels))
+        
+        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_WinStats.png"))
 
-    ax.barh(y_pos, [bwins,wwins,draws], align='center',color = [(0.9,0.5,0.1),(0.1,0.1,0.9),(0.5,0,0.5)])
-    ax.set_yticks(y_pos, labels=bar_labels)
-    ax.invert_yaxis()  # labels read top-to-bottom
-    ax.set_xlabel('Wins')
-    ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Win Statistics")
+        #NUMBER OF MOVES TO WIN
+        fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
+        move_data = [moves_stats['black'],moves_stats['white']]
+        bp = ax.boxplot(move_data, labels=['Black','White'], showfliers=False, patch_artist=True)    
+        ax.set_ylabel('Number of Moves to Win')
+        ax.set_xlabel('Color')
+        
+        #Purple and Blue
+        colors = [(176 / 255, 51 / 255, 170 / 255, 1),(44 / 255, 72 / 255, 184 / 255, 1)]
+        for patch, color in zip(bp['boxes'], colors):
+            patch.set_facecolor(color)
 
-    plt.savefig(os.path.join(newPath,f'{experiment_name}_WinStats.png'))
-
-    #NUMBER OF MOVES TO WIN
-    fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
-    ax.boxplot([moves_stats['black'],moves_stats['white']], labels=['Black','White'], showfliers=False)    
-    ax.set_ylabel('Number of Moves to Win')
-    ax.set_xlabel('Color')
-
-    fig.subplots_adjust(hspace=0.4)
-    plt.savefig(os.path.join(newPath,f'{experiment_name}_NMoves.png'))
-
-
+        plt.setp(bp['medians'], color='Cyan')
+        ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Number of Moves to Win")
+        
+        fig.subplots_adjust(hspace=0.4)
+        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_NMoves.png"))
 
 
+def create_search_data_graph(experiment_path, experiment_name):
+    newPath = join('images', experiment_name)
+    full_experiment_path = join(experiment_path,experiment_name)
 
+    match_list = os.listdir(full_experiment_path)
+    match_types_set = set([' '.join(mname.split('_')[1:5]) for mname in match_list])
+    search_data = {
+        'branching' : [],
+        'visited' : []
+    }        
+    for match_type in match_types_set:
+        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()] 
+        for mname in match_names:
+            with open(os.path.join(full_experiment_path,mname),'r') as mjson:
+                match_data = json.load(mjson)
+            search_data['branching'].extend([mdata['search_data']['branching'] 
+            for mdata in match_data['move_data'].values()
+            if 'search_data' in mdata
+            ]) 
+            search_data['visited'].extend([mdata['search_data']['visited']
+            for mdata in match_data['move_data'].values()
+            if 'search_data' in mdata
+            ]) 
+
+        #NUMBER OF MOVES TO WIN
+        fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
+        sdata = [search_data['branching'],search_data['visited']]
+        bp = ax.boxplot(sdata, labels=['Branching Factor','Visited Nodes'], showfliers=False, patch_artist=True)            
+        
+        #Red and Green
+        colors = [(235 / 255, 64/ 255, 52/ 255,1.0),(93/ 255, 199/ 255, 58/ 255,1.0)]
+        for patch, color in zip(bp['boxes'], colors):
+            patch.set_facecolor(color)
+
+        plt.setp(bp['medians'], color='black')
+
+        ax.set_title(f"{experiment_name.replace('-',' ').upper()} Minimax Search Data")
+        fig.subplots_adjust(hspace=0.4)
+        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_SearchData.png"))
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-test'
+    experiment_name = 'experiment-opening-static'
     create_experiment_imgs(experiment_path,experiment_name)
     create_winner_graph(experiment_path,experiment_name)
+    create_search_data_graph(experiment_path,experiment_name)
 
 
 

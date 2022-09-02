@@ -49,7 +49,7 @@ players_ft = {
 }
 
 start_time = time()
-experiment_sd_var = Experiment('test', players_ft, repetitions=1)
+experiment_sd_var = Experiment('opening-static', players_ft, repetitions=10)
 experiment_sd_var.run()
 print('Experiment took %f to run.' % (round(time() - start_time,3)))
 

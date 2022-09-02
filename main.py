@@ -1,10 +1,9 @@
 from operator import xor
-from boardstate import BoardState
 from match import Match, draw_threat_hints
 from gomoku import Game,check_winning_condition
 from gui import  xy_to_colrow
-from players import AIPlayer, AIRandomPlayer, HumanPlayer
-from boardstate import FORCING_THREAT_TYPES
+from players import AIPlayer, HumanPlayer
+
 
 import pygame
 import re
@@ -51,12 +50,14 @@ if __name__ == "__main__":
     ai_black = AIPlayer(search_depth=5,version=1)
     human  = HumanPlayer()
 
-    match = Match(ai_black,ai_white,save_match_data=True)
+    match = Match(human,ai_white,save_match_data=True)
     
     update_threat_hints = lambda: draw_threat_hints(match.game,match.gui)
     match.game.add_turn_change_callback(update_threat_hints)
 
-    advance_turn = lambda x,y : ai_black.play_turn() if not xor(match.game.black_turn, ai_black.color == 'black') else ai_white.play_turn()
+    # advance_turn = lambda x,y : ai_black.play_turn() if not xor(match.game.black_turn, ai_black.color == 'black') else ai_white.play_turn()
+    # match.gui.add_on_click_callback(advance_turn)
+    advance_turn = lambda x,y : ai_white.play_turn()
     match.gui.add_on_click_callback(advance_turn)
 
     rollback_turn = lambda x,y : match.game.revert_turn()

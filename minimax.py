@@ -18,9 +18,6 @@ THREAT_PRIORITY = [
     [8]
 ]
 
-parallel = Parallel(n_jobs=1,backend='threading')
-
-
 def gomoku_check_winner(state : BoardState) -> tuple:
     if len(state.b_threats['winning']) > 0:
         return True,'black'
@@ -56,9 +53,6 @@ def gomoku_get_state_children(state : BoardState, maximize : bool) -> list:
         if ft.info['type'] == 4:
             return [(m, maximize) for m in ft.get_counter_moves()]
         children.update([(m, maximize) for m in ft.get_counter_moves()])
-
-    # if len(children) > 0:
-    #     return list(children)
 
     if len(children) > 0:
         return list(children)
@@ -164,8 +158,7 @@ def minimax(state : BoardState,
         for child in children:
             move,_ = child        
             state.make_move(move, maximize)
-            visited+=1
-            #eval = minimax(state, depth - 1, False, t_weights, alpha, beta,version=version)      
+            visited+=1   
             eval = minimax(
                 state=state,
                 depth=depth - 1,

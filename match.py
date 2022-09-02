@@ -61,7 +61,7 @@ class Match:
                 tags : List[str]  = []):
 
         self.playerBlack = playerBlack
-        self.playerWhite = playerWhite        
+        self.playerWhite = playerWhite                
 
         if self.playerBlack.name == self.playerWhite.name:
             rand_str_bl = generate_random_string(5)

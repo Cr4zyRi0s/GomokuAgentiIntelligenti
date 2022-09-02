@@ -98,17 +98,20 @@ class AIPlayer(Player):
         random.seed(self.seed)
 
     def swap2_first_place_stones(self):         
-        #place the first black stone at random
-        b_stone_placements = []
-        b_stone_placements.append((
-        random.randint(2,self.game.size - 3), 
-        random.randint(2,self.game.size - 3)))
-        #then choose to place a second stone so that it does not share a line with the first one
-        b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
-        #same goes for the white stone
-        w_stone_placement = place_stone_not_aligned(self.game.size, b_stone_placements)
+        b_stone_placements = [(5,7),(9,7)]
+        w_stone_placements = [(7,7)]
 
-        self.game.swap2_first_placement(b_stone_placements, [w_stone_placement])
+        # #place the first black stone at random
+        # b_stone_placements = []
+        # b_stone_placements.append((
+        # random.randint(2,self.game.size - 3), 
+        # random.randint(2,self.game.size - 3)))
+        # #then choose to place a second stone so that it does not share a line with the first one
+        # b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
+        # #same goes for the white stone
+        # w_stone_placement = place_stone_not_aligned(self.game.size, b_stone_placements)
+
+        self.game.swap2_first_placement(b_stone_placements, w_stone_placements)
 
     def swap2_accept_or_place(self):
         bstate = self.game.board_state

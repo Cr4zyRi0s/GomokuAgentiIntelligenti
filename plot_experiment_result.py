@@ -1,3 +1,4 @@
+from shutil import move
 import matplotlib.pyplot as plt
 import json
 import numpy as np
@@ -74,7 +75,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
         plt.title("Winner: "+winner +" player", fontsize=10)
         plt.xlabel("row")
         plt.ylabel("column")
-        #plt.show()
+
         play_img = matchn+'_PlayImg.png'
         fig.savefig(join(newPath, 'PlayImg', play_img))
 
@@ -87,7 +88,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
             temp = tuple(literal_eval(move))
             tup = tup +(temp,)    
             count = count+1
-
+        
         fig = plt.figure(figsize=(6, 5))
         for i in range(count):
             if tup[i][2] == True:
@@ -104,28 +105,10 @@ def create_experiment_imgs(experiment_path, experiment_name):
 
         plt.plot(ax_x_bl,time_bl, color='black', marker='o', linestyle='dashed',
             linewidth=2, markersize=8)
-        '''
-        for i in range(np.size(ax_x_bl)):
-            plt.annotate(time_bl[i],
-                                xy=(ax_x_bl[i], time_bl[i]),
-                                xytext=(ax_x_bl[i]+0.1, time_bl[i]),  
-                                color= "black",
-                                size = 10
-                                )
-            
-        '''
+
         
         plt.plot(ax_x_wh,time_wh, color='white', marker='o', linestyle='dashed',
             linewidth=2, markersize=8)
-        '''
-        for i in range(np.size(ax_x_wh)):
-            plt.annotate(time_wh[i],
-                                xy=(ax_x_wh[i], time_wh[i]),
-                                xytext=(ax_x_wh[i]+0.07, time_wh[i]),  
-                                color= "white",
-                                size = 10
-                                )
-        '''
             
         plt.grid()
         plt.suptitle("Time taken by the player to place a stone", fontsize=12)
@@ -138,9 +121,87 @@ def create_experiment_imgs(experiment_path, experiment_name):
         img = matchn+'_TimeImg.png'
         fig.savefig(join(newPath,'TimeImg',img))
 
+def create_winner_graph(experiment_path, experiment_name):
+    newPath = join('images', experiment_name)
+
+    if not os.path.exists(newPath):
+            os.makedirs(newPath+'/PlayImg')
+            os.makedirs(newPath+'/TimeImg')
+
+    full_experiment_path = join(experiment_path,experiment_name)
+    bwins = 0
+    wwins = 0
+    draws = 0
+
+    moves_stats = {
+        'black' : [],
+        'white' : []
+    }
+
+    for matchn in os.listdir(full_experiment_path):
+        with open(os.path.join(full_experiment_path,matchn),'r') as mjson:
+            mdata = json.load(mjson)
+            win = mdata['winner'].lower()
+            nmoves = len(mdata['moves'])
+            if win == 'black':
+                moves_stats['black'].append(nmoves)
+                bwins += 1
+            elif win == 'white':
+                moves_stats['white'].append(nmoves)
+                wwins += 1
+            elif win == 'draw':
+                draws += 1
+        
+    #WIN COUNTS
+    fig, ax = plt.subplots()
+
+    bar_labels = ('Black', 'White', 'Draw')
+    y_pos = np.arange(len(bar_labels))
+
+    ax.barh(y_pos, [bwins,wwins,draws], align='center',color = [(0.9,0.5,0.1),(0.1,0.1,0.9),(0.5,0,0.5)])
+    ax.set_yticks(y_pos, labels=bar_labels)
+    ax.invert_yaxis()  # labels read top-to-bottom
+    ax.set_xlabel('Wins')
+    ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Win Statistics")
+
+    plt.savefig(os.path.join(newPath,f'{experiment_name}_WinStats.png'))
+
+    #NUMBER OF MOVES TO WIN
+    fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
+    ax.boxplot([moves_stats['black'],moves_stats['white']], labels=['Black','White'], showfliers=False)    
+    ax.set_ylabel('Number of Moves to Win')
+    ax.set_xlabel('Color')
+
+    fig.subplots_adjust(hspace=0.4)
+    plt.savefig(os.path.join(newPath,f'{experiment_name}_NMoves.png'))
+
+
+
+
+
+
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-v2-test'
+    experiment_name = 'experiment-test'
     create_experiment_imgs(experiment_path,experiment_name)
+    create_winner_graph(experiment_path,experiment_name)
 
 
+
+
+# for i in range(np.size(ax_x_bl)):
+#     plt.annotate(time_bl[i],
+#                         xy=(ax_x_bl[i], time_bl[i]),
+#                         xytext=(ax_x_bl[i]+0.1, time_bl[i]),  
+#                         color= "black",
+#                         size = 10
+#                         )
+    
+
+# for i in range(np.size(ax_x_wh)):
+#     plt.annotate(time_wh[i],
+#                         xy=(ax_x_wh[i], time_wh[i]),
+#                         xytext=(ax_x_wh[i]+0.07, time_wh[i]),  
+#                         color= "white",
+#                         size = 10
+#                         )

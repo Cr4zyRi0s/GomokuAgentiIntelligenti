@@ -170,7 +170,7 @@ class Game:
                 for cback in self.on_game_end_callbacks:
                     cback()
             if no_moves_possible(self.board_state.grid):
-                self.winning_player = 'Draw'
+                self.winning_player = 'draw'
                 for cback in self.on_game_end_callbacks:
                     cback()
 

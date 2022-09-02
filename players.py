@@ -72,7 +72,12 @@ class Player:
         raise NotImplementedError() 
     
 class AIPlayer(Player):
-    def __init__(self,search_depth : int = DEFAULT_SEARCH_DEPTH, seed : int = None, t_weights : dict = None, version : int = 1):
+    def __init__(self,         
+                search_depth : int = DEFAULT_SEARCH_DEPTH,
+                seed : int = None,
+                t_weights : dict = None,
+                version : int = 1):
+
         super().__init__()
         if seed is None:
             self.seed = int(time())
@@ -81,6 +86,8 @@ class AIPlayer(Player):
         self.name = self.__class__.__name__
         self.search_depth = search_depth
         self.version = version
+        self.agg_sdata_coll = {}
+
         if t_weights is None:
             self.t_weights = {
                 'forcing' : 100,
@@ -105,29 +112,31 @@ class AIPlayer(Player):
 
     def swap2_accept_or_place(self):
         bstate = self.game.board_state
-        #bl_nft = bstate.b_threats['nforcing'] 
+        bl_nft = bstate.b_threats['nforcing'] 
 
-        # for t in bl_nft:
-        #     if t.info['type'][0] > 1:
-        #         break
-        # else:
-        #     self.game.swap2_accept_or_place(self,'white')           
-        #     return
-        move=gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth,self.version)
-        bstate.make_move(move,False)
-        eval=gomoku_state_static_eval(bstate,t_weights=self.t_weights,version=self.version)        
-    
-        if abs(eval) <= 0:
-            # for bt in bstate.b_threats['nforcing']: 
-            #     for next_bt in B_THREAT_DEP[bt.group]:
-            #         next_bt_info = B_THREAT_DATA[next_bt]
-            #         if _get_threat_class_from_info(next_bt_info) == 'forcing':
-            #             self.game.swap2_accept_or_place('black')
-            #             return
-            self.game.swap2_accept_or_place('white')
+        for t in bl_nft:
+            if t.info['type'][0] > 1:
+                break
+        else:
+            self.game.swap2_accept_or_place(self,'white')           
             return
-        else:             
-            self.game.swap2_accept_or_place(self,'black')  
+        
+        self.game.swap2_accept_or_place(self,'place')           
+        # move=gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth,self.version)
+        # bstate.make_move(move,False)
+        # eval=gomoku_state_static_eval(bstate,t_weights=self.t_weights,version=self.version)
+        # bstate.unmake_last_move()        
+    
+        # if abs(eval) <= 0:
+        #     # for bt in bstate.b_threats['nforcing']: 
+        #     #     for next_bt in B_THREAT_DEP[bt.group]:
+        #     #         next_bt_info = B_THREAT_DATA[next_bt]
+        #     #         if _get_threat_class_from_info(next_bt_info) == 'forcing':
+        #     #             self.game.swap2_accept_or_place('black')
+        #     #             return
+        #     self.game.swap2_accept_or_place('white')        
+        # else:             
+        #     self.game.swap2_accept_or_place(self,'black')  
                 
     def swap2_second_place_stones(self):     
         bstate = self.game.board_state        
@@ -148,7 +157,11 @@ class AIPlayer(Player):
 
         state_score = gomoku_state_static_eval(bstate)
         if state_score > 0:
-            best_white_move = gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth)
+            best_white_move,_ = gomoku_get_best_move(
+                state=bstate,
+                maximize=False,
+                t_weights=self.t_weights,
+                search_depth=self.search_depth)
             bstate.make_move(best_white_move, False)
             new_state_score = gomoku_state_static_eval(bstate, self.t_weights)
             bstate.unmake_last_move()
@@ -173,10 +186,15 @@ class AIPlayer(Player):
 
         print('ai', self.color,'thinking...')
         maximize = True if self.color == 'black' else False
-        best_move = gomoku_get_best_move(self.game.board_state,
-                                        maximize,
-                                        self.t_weights,
-                                        version=self.version)
+        best_move,agg_sdata = gomoku_get_best_move(
+                                        state=self.game.board_state,
+                                        search_depth=self.search_depth,
+                                        maximize=maximize,
+                                        t_weights=self.t_weights,
+                                        version=self.version
+                                        )
+        
+        self.agg_sdata_coll[str((best_move[0],best_move[1],maximize))] = agg_sdata
         if not self.game.turn(self,best_move):
             raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
         print('ai', self.color,'done')

@@ -137,6 +137,16 @@ class Match:
 
         filename = '_'.join([filename,str(last_index + 1)]) + '.json'
         full_path = os.path.join(path, filename)
+        
+        for mstr, sdata in self.playerBlack.agg_sdata_coll.items():
+            if mstr not in self.move_data:
+                continue 
+            self.move_data[mstr]['search_data'] = sdata
+
+        for mstr, sdata in self.playerWhite.agg_sdata_coll.items():
+            if mstr not in self.move_data:
+                continue 
+            self.move_data[mstr]['search_data'] = sdata    
 
         with open(full_path, 'w') as file:
             json.dump({     

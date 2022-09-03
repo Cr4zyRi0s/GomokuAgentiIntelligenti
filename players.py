@@ -45,7 +45,6 @@ def place_stone_not_aligned(board_size : int, other_stones : list):
                 accept = False
             elif s[1] == rand_pos[1]:
                 accept = False
-
     return rand_pos
 
 

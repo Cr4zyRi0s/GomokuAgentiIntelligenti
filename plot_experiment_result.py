@@ -237,12 +237,10 @@ def create_search_data_graph(experiment_path, experiment_name):
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-opening-static-multstd'
+    experiment_name = 'experiment-opening-human-vs-ai'
     create_experiment_imgs(experiment_path,experiment_name)
     create_winner_graph(experiment_path,experiment_name)
     create_search_data_graph(experiment_path,experiment_name)
-
-
 
 
 # for i in range(np.size(ax_x_bl)):

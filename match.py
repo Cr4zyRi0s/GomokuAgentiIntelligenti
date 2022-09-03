@@ -4,7 +4,7 @@ import json
 from time import time,sleep
 from typing import List
 from boardstate import BoardState
-from players import Player, ReplayPlayer
+from players import AIPlayer, Player, ReplayPlayer
 from gomoku import Game, check_winning_condition
 from gui import GUIHandler
 from utils import generate_random_string, get_index_transform_func, no_moves_possible
@@ -138,15 +138,17 @@ class Match:
         filename = '_'.join([filename,str(last_index + 1)]) + '.json'
         full_path = os.path.join(path, filename)
         
-        for mstr, sdata in self.playerBlack.agg_sdata_coll.items():
-            if mstr not in self.move_data:
-                continue 
-            self.move_data[mstr]['search_data'] = sdata
+        if isinstance(self.playerBlack, AIPlayer):
+            for mstr, sdata in self.playerBlack.agg_sdata_coll.items():
+                if mstr not in self.move_data:
+                    continue 
+                self.move_data[mstr]['search_data'] = sdata
 
-        for mstr, sdata in self.playerWhite.agg_sdata_coll.items():
-            if mstr not in self.move_data:
-                continue 
-            self.move_data[mstr]['search_data'] = sdata    
+        if isinstance(self.playerWhite, AIPlayer):
+            for mstr, sdata in self.playerWhite.agg_sdata_coll.items():
+                if mstr not in self.move_data:
+                    continue 
+                self.move_data[mstr]['search_data'] = sdata    
 
         with open(full_path, 'w') as file:
             json.dump({     

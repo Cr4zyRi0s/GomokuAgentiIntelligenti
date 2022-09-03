@@ -51,7 +51,9 @@ ai_sd4 = {
 
 players_defs = {
     'human' : human,
-    'sd2v2' : ai_sd2_v2
+    'sd2v2' : ai_sd2_v2,
+    'sd3v2' : ai_sd3_v2,
+    'sd4v2' : ai_sd4_v2,
 }
 
 def run_human_vs_ai():
@@ -67,6 +69,9 @@ def run_human_vs_ai():
     experiment =  Experiment('human-vs-ai', player_defs=players_defs, match_list=match_list, repetitions=2)
     experiment.run()
     print('Experiment took %f to run.' % (round(time() - start_time,3)))    
+
+def run_depth_variation():
+    pass
 
 if __name__ == '__main__':
     run_human_vs_ai()

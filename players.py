@@ -6,6 +6,16 @@ from utils import is_valid_move
 from minimax import DEFAULT_SEARCH_DEPTH, gomoku_get_best_move, gomoku_state_static_eval
 import networkx as nx
 
+OPENINGS = [
+    ([(7,7),(8,10)],[(8,7)]),
+    ([(7,7), (7,10)],[(8,8)]),
+    ([(7,7), (7,10)],[(8,7)]),
+    ([(7,7),(8,10)],[(8,8)]),
+    ([(7,7),(10,7)],[(8,7)]),
+    ([(7,7),(6,10)],[(8,8)])
+]  
+OPENING_CNT = 0
+
 def place_random_stones(board, n_stones : int) -> list:
     positions = []
     for _ in range(n_stones):          
@@ -55,8 +65,7 @@ class Player:
         return False
 
     def assign_color(self, color):
-        self.color = color
-        self.name = '_'.join([self.name, self.color[:2]])
+        self.color = color        
 
     def swap2_first_place_stones(self):    
         raise NotImplementedError()    
@@ -97,19 +106,23 @@ class AIPlayer(Player):
             self.t_weights = t_weights
         random.seed(self.seed)
 
-    def swap2_first_place_stones(self):         
-        b_stone_placements = [(5,7),(9,7)]
-        w_stone_placements = [(7,7)]
+    def swap2_first_place_stones(self):      
+        # global OPENINGS
+        # global OPENING_CNT   
+        # opening = OPENINGS[OPENING_CNT % len(OPENINGS)]
+        # OPENING_CNT+=1
+        # b_stone_placements = opening[0]
+        # w_stone_placements = opening[1]
 
-        # #place the first black stone at random
-        # b_stone_placements = []
-        # b_stone_placements.append((
-        # random.randint(2,self.game.size - 3), 
-        # random.randint(2,self.game.size - 3)))
-        # #then choose to place a second stone so that it does not share a line with the first one
-        # b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
-        # #same goes for the white stone
-        # w_stone_placement = place_stone_not_aligned(self.game.size, b_stone_placements)
+        #place the first black stone at random
+        b_stone_placements = []
+        b_stone_placements.append((
+        random.randint(2,self.game.size - 3), 
+        random.randint(2,self.game.size - 3)))
+        #then choose to place a second stone so that it does not share a line with the first one
+        b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
+        #same goes for the white stone
+        w_stone_placements = [place_stone_not_aligned(self.game.size, b_stone_placements)]
 
         self.game.swap2_first_placement(b_stone_placements, w_stone_placements)
 
@@ -158,15 +171,17 @@ class AIPlayer(Player):
             self.game.swap2_select_color(self, 'black')
             return
 
-        state_score = gomoku_state_static_eval(bstate)
+        state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
         if state_score > 0:
             best_white_move,_ = gomoku_get_best_move(
                 state=bstate,
                 maximize=False,
                 t_weights=self.t_weights,
-                search_depth=self.search_depth)
+                search_depth=self.search_depth,                
+                version=self.version
+                )
             bstate.make_move(best_white_move, False)
-            new_state_score = gomoku_state_static_eval(bstate, self.t_weights)
+            new_state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
             bstate.unmake_last_move()
             if new_state_score <= 0:
                 self.game.swap2_select_color(self,'white')
@@ -180,6 +195,7 @@ class AIPlayer(Player):
     def get_definition(self) -> dict:
         return {
             'search_depth' : self.search_depth,
+            'version' : self.version,
             'seed' : self.seed
         }
 

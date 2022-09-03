@@ -41,13 +41,13 @@ class Experiment:
             white_class = self.player_defs[white_id]['class']
             white_args = self.player_defs[white_id]['args']
 
-            p_black = self.player_types[black_class](**black_args)
-            p_black.name = black_id
-            p_white = self.player_types[white_class](**white_args)           
-            p_white.name = white_id
+            p1 = self.player_types[black_class](**black_args)
+            p1.name = black_id
+            p2 = self.player_types[white_class](**white_args)           
+            p2.name = white_id
 
             for _ in tqdm(range(self.repetitions), desc='Simulating matches - %s vs. %s' % (m[0],m[1])):
-                curr_match = Match(p_black, p_white, gui_enabled=False,save_match_data=True,match_data_path=self.full_path)                                
+                curr_match = Match(p1, p2, gui_enabled=False,save_match_data=True,match_data_path=self.full_path)                                
                 curr_match.tags = [black_id + '_bl', white_id + '_wh']
                 while not (
                 check_winning_condition(curr_match.game) or
@@ -55,9 +55,9 @@ class Experiment:
                 ):
                     sleep(1)
                     if curr_match.game.black_turn:
-                        p_black.play_turn()
+                        curr_match.game.blackPlayer.play_turn()
                     else:
-                        p_white.play_turn()
+                        curr_match.game.whitePlayer.play_turn()
 
 
     def _check_player_id(self, id):

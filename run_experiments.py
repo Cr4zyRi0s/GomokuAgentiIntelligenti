@@ -45,11 +45,12 @@ ai_sd4 = {
 }
 
 players_ft = {
-    'sd2v2' : ai_sd2_v2
+    'sd2v2' : ai_sd2_v2,
+    'sd4v2' : ai_sd4_v2
 }
 
 start_time = time()
-experiment_sd_var = Experiment('opening-static', players_ft, repetitions=10)
+experiment_sd_var = Experiment('opening-static-multstd', players_ft, repetitions=6)
 experiment_sd_var.run()
 print('Experiment took %f to run.' % (round(time() - start_time,3)))
 

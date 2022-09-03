@@ -1,5 +1,4 @@
 /__[A-Za-z]*__
-*images
 *experiments
 */match_data
 */venv

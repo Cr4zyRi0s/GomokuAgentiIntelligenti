@@ -9,6 +9,7 @@ import numpy as np
 
 from players import HumanPlayer
 from pygamebutton import Button
+from utils import line_intersect
 
 THREAT_COLORS = {
     1 : (0, 255, 0),
@@ -179,6 +180,7 @@ class GUIHandler:
 
             pygame.draw.line(self.screen,(0,0,255),s0c,e0c,3)
             pygame.draw.line(self.screen,(0,0,255),s1c,e1c,3)
+            self._draw_stone(*line_intersect(s0,e0,s1,e1), (255,0,255))
 
 
     def draw(self):
@@ -208,7 +210,7 @@ class GUIHandler:
                     swap2_msg = "Black player can place 2 black stones and 1 white stone"
                 if self.game.swap2_state["accept_or_place"]:
                     swap2_msg = "White player is deciding his color or to place more stones"
-                    if isinstance(self.game.blackPlayer, HumanPlayer):
+                    if isinstance(self.game.whitePlayer, HumanPlayer):
                         self._create_button('white',
                         (300, BOARD_WIDTH - int(BOARD_BORDER / 2.0) + 30)
                         )

@@ -294,8 +294,8 @@ def _eval_move(state : BoardState,
                 ):    
     
     search_data={
-        'branching': [],
-        'visited' : []
+        'branching': [1],
+        'visited' : [1]
     } 
 
     state.make_move(child[0], maximize)

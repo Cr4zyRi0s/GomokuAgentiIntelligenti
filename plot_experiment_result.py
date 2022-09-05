@@ -16,7 +16,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
     full_experiment_path = join(experiment_path,experiment_name)
     for matchn in os.listdir(full_experiment_path):
         name = join(full_experiment_path,matchn)
-    
+
         file_json = open(name)
         data = json.load(file_json)
 
@@ -29,7 +29,7 @@ def create_experiment_imgs(experiment_path, experiment_name):
         moves = ()
         number_moves=0
         for move in data["moves"]:
-            moves = moves +(move,) 
+            moves = moves +(move,)
             number_moves = number_moves+1
 
         for k in range(number_moves):
@@ -42,15 +42,15 @@ def create_experiment_imgs(experiment_path, experiment_name):
 
         annotations =np.arange(1,np.size(vec_x)+1)
         sizes = np.random.uniform(400, 400)
-        color = np.array([]) 
-        color_text = np.array([]) 
+        color = np.array([])
+        color_text = np.array([])
 
         plt.rcParams['axes.facecolor'] = '#EEDFCC'
         fig, ax = plt.subplots(1, figsize=(6, 5))
         for i in vec_color:
             if i== 1.0:
                 color = np.append(color, "black")
-            if i== 0.0: 
+            if i== 0.0:
                 color = np.append(color, "white")
 
         ax.scatter(vec_x, vec_y, s=sizes, c=color, vmin=0, vmax=100)
@@ -63,14 +63,14 @@ def create_experiment_imgs(experiment_path, experiment_name):
                 color_text = np.append(color_text, "white")
             else:
                 color_text = np.append(color_text, "black")
-            
+
             ax.annotate(label,
                                 xy=(vec_x[i], vec_y[i]),
-                                xytext=(vec_x[i]-0.25, vec_y[i]+0.2),  
+                                xytext=(vec_x[i]-0.25, vec_y[i]+0.2),
                                 color= color_text[i],
                                 size = 11
                                 )
-            
+
         plt.suptitle("Gomoku Play Example", fontsize = 12)
         plt.title("Winner: "+winner +" player", fontsize=10)
         plt.xlabel("row")
@@ -86,9 +86,9 @@ def create_experiment_imgs(experiment_path, experiment_name):
         count=0
         for move in data["move_data"]:
             temp = tuple(literal_eval(move))
-            tup = tup +(temp,)    
+            tup = tup +(temp,)
             count = count+1
-        
+
         fig = plt.figure(figsize=(6, 5))
         for i in range(count):
             if tup[i][2] == True:
@@ -106,10 +106,10 @@ def create_experiment_imgs(experiment_path, experiment_name):
         plt.plot(ax_x_bl,time_bl, color='black', marker='o', linestyle='dashed',
             linewidth=2, markersize=8)
 
-        
+
         plt.plot(ax_x_wh,time_wh, color='white', marker='o', linestyle='dashed',
             linewidth=2, markersize=8)
-            
+
         plt.grid()
         plt.suptitle("Time taken by the player to place a stone", fontsize=12)
         plt.title("Winner: "+winner +" player", fontsize=10)
@@ -133,9 +133,9 @@ def create_winner_graph(experiment_path, experiment_name):
 
     match_list = os.listdir(full_experiment_path)
     match_types_set = set([' '.join(mname.split('_')[1:5]) for mname in match_list])
-    
+
     for match_type in match_types_set:
-        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()] 
+        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()]
         bwins = 0
         wwins = 0
         draws = 0
@@ -157,7 +157,7 @@ def create_winner_graph(experiment_path, experiment_name):
                     wwins += 1
                 elif win == 'draw':
                     draws += 1
-            
+
         #WIN COUNTS
         fig, ax = plt.subplots()
 
@@ -170,19 +170,19 @@ def create_winner_graph(experiment_path, experiment_name):
         ax.invert_yaxis()  # labels read top-to-bottom
         ax.set_xlabel('Wins')
         ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Win Statistics")
-        
+
         ax.bar_label(bars,win_data)
 
-        
+
         plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_WinStats.png"))
 
         #NUMBER OF MOVES TO WIN
         fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
         move_data = [moves_stats['black'],moves_stats['white']]
-        bp = ax.boxplot(move_data, labels=['Black','White'], showfliers=False, patch_artist=True)    
+        bp = ax.boxplot(move_data, labels=['Black','White'], showfliers=False, patch_artist=True)
         ax.set_ylabel('Number of Moves to Win')
         ax.set_xlabel('Color')
-        
+
         #Purple and Blue
         colors = [(176 / 255, 51 / 255, 170 / 255, 1),(44 / 255, 72 / 255, 184 / 255, 1)]
         for patch, color in zip(bp['boxes'], colors):
@@ -190,7 +190,7 @@ def create_winner_graph(experiment_path, experiment_name):
 
         plt.setp(bp['medians'], color='Cyan')
         ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Number of Moves to Win")
-        
+
         fig.subplots_adjust(hspace=0.4)
         plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_NMoves.png"))
 
@@ -204,40 +204,49 @@ def create_search_data_graph(experiment_path, experiment_name):
     search_data = {
         'branching' : [],
         'visited' : []
-    }        
+    }
     for match_type in match_types_set:
-        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()] 
+        match_names = [mname for mname in match_list if ' '.join(mname.split('_')[1:5]).lower() == match_type.lower()]
         for mname in match_names:
             with open(os.path.join(full_experiment_path,mname),'r') as mjson:
                 match_data = json.load(mjson)
-            search_data['branching'].extend([mdata['search_data']['branching'] 
+            search_data['branching'].extend([mdata['search_data']['branching']
             for mdata in match_data['move_data'].values()
             if 'search_data' in mdata
-            ]) 
+            ])
             search_data['visited'].extend([mdata['search_data']['visited']
             for mdata in match_data['move_data'].values()
             if 'search_data' in mdata
-            ]) 
+            ])
 
         #NUMBER OF MOVES TO WIN
         fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
         sdata = [search_data['branching'],search_data['visited']]
-        bp = ax.boxplot(sdata, labels=['Branching Factor','Visited Nodes'], showfliers=False, patch_artist=True)            
-        
+        bp = ax.boxplot(sdata, labels=['Branching Factor','Visited Nodes'], showfliers=False, patch_artist=True)
+
         #Red and Green
-        colors = [(235 / 255, 64/ 255, 52/ 255,1.0),(93/ 255, 199/ 255, 58/ 255,1.0)]
+        colors = [(235 / 255, 64 / 255, 52 / 255,1.0),(93 / 255, 199 / 255, 58 / 255, 1.0)]
         for patch, color in zip(bp['boxes'], colors):
             patch.set_facecolor(color)
 
         plt.setp(bp['medians'], color='black')
 
         ax.set_title(f"{experiment_name.replace('-',' ').upper()} Minimax Search Data")
+
         fig.subplots_adjust(hspace=0.4)
         plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_SearchData.png"))
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-opening-human-vs-ai'
+    experiment_name = 'experiment-opening-v2'
+    # SMALL_SIZE = 10
+    # MEDIUM_SIZE = 14
+
+    # plt.rc('axes', labelsize=MEDIUM_SIZE)
+    # plt.rc('xtick', labelsize=MEDIUM_SIZE)
+    # plt.rc('ytick', labelsize=MEDIUM_SIZE)
+
+
     create_experiment_imgs(experiment_path,experiment_name)
     create_winner_graph(experiment_path,experiment_name)
     create_search_data_graph(experiment_path,experiment_name)
@@ -246,16 +255,16 @@ if __name__ == '__main__':
 # for i in range(np.size(ax_x_bl)):
 #     plt.annotate(time_bl[i],
 #                         xy=(ax_x_bl[i], time_bl[i]),
-#                         xytext=(ax_x_bl[i]+0.1, time_bl[i]),  
+#                         xytext=(ax_x_bl[i]+0.1, time_bl[i]),
 #                         color= "black",
 #                         size = 10
 #                         )
-    
+
 
 # for i in range(np.size(ax_x_wh)):
 #     plt.annotate(time_wh[i],
 #                         xy=(ax_x_wh[i], time_wh[i]),
-#                         xytext=(ax_x_wh[i]+0.07, time_wh[i]),  
+#                         xytext=(ax_x_wh[i]+0.07, time_wh[i]),
 #                         color= "white",
 #                         size = 10
 #                         )

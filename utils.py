@@ -1,3 +1,6 @@
+from tqdm import tqdm
+
+import itertools
 import string
 import random 
 import numpy as np
@@ -57,21 +60,29 @@ def cr_to_index315(c,r,size : int = DEFAULT_BOARD_SIZE) -> int:
 def index_to_cr(index,size : int = DEFAULT_BOARD_SIZE) -> tuple:
     r = index // (size + 2)
     c = index - r * (size + 2) - 1
+    if r >= size or c >= size:
+        print((r,c))
     return c,r
 def index90_to_cr(index,size : int = DEFAULT_BOARD_SIZE) -> tuple:
     c = index // (size + 2)
     r = index - c * (size + 2) - 1
+    if r >= size or c >= size:
+        print((r,c))
     return c,r     
 def index45_to_cr(index,size : int = DEFAULT_BOARD_SIZE)  -> tuple:
     rc = index // (size + 2)
     c = index - rc * (size + 2) - 1
     r = rc - c
+    if r >= size or c >= size:
+        print((r,c))
     return c,r 
 
 def index315_to_cr(index,size : int = DEFAULT_BOARD_SIZE)  -> tuple:
     rc = index // (size + 2)
     c = index - rc * (size + 2) - 1
     r = rc - size + c + 1
+    if r >= size or c >= size:
+        print((r,c))
     return c,r
 
 def get_index_transform_func(angle : int):
@@ -91,21 +102,13 @@ def no_moves_possible(board : np.array) -> bool:
     return n_avail >= board.shape[0] * board.shape[1]
 
 def is_valid_move(col : int, row : int, board : np.array) -> bool:
-    """Check if placing a stone at (col, row) is valid on board
-    Args:
-        col (int): column number
-        row (int): row number
-        board (object): board grid (size * size matrix)
-    Returns:
-        boolean: True if move is valid, False otherewise
-    """
     if col < 0 or col >= board.shape[0]:
         return False
     if row < 0 or row >= board.shape[0]:
         return False    
     return board[col, row] == 0
 
-def line_intersect(P0, P1, Q0, Q1):  
+def line_intersect(P0, P1, Q0, Q1):
     if P0 == Q0:
         return Q0
     elif P1 == Q0:
@@ -130,6 +133,42 @@ def line_intersect(P0, P1, Q0, Q1):
     return None
 
 if __name__ == '__main__':
-    assert line_intersect((0,0),(2,0),(0,1),(1,0)) == (1.0, 0.0)
+    coords = list(itertools.product(range(15), range(15)))
+
+    for c in coords:
+        index0 = cr_to_index(*c)
+        cr0 = index_to_cr(index0)
+        assert c == cr0
+
+        index90 = cr_to_index90(*c)
+        cr90 = index90_to_cr(index90)
+        assert c == cr90
+
+        index45 = cr_to_index45(*c)
+        cr45 = index45_to_cr(index45)
+        assert c == cr45
+
+        index315 = cr_to_index315(*c)
+        cr315 = index315_to_cr(index315)
+        assert c == cr315
+        
+
+
+    # out_of_bounds = []
+
+    # edge_coords = [(i,14) for i in range(15)]    
+
+    # for p1,q1 in tqdm(list(itertools.product(coords,repeat=2))):
+    #     for p2,q2 in itertools.product(edge_coords,repeat=2):    
+    #         intersect = line_intersect(p1,p2,q1,q2)
+    #         if intersect is None:
+    #             continue
+    #         if intersect[0] > 14 or intersect[1] > 14:
+    #             out_of_bounds.append((p1,p2,q1,q2))
+                
+
+
+    # print(out_of_bounds)
+    
 
 

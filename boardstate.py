@@ -84,7 +84,7 @@ class BoardState:
             if intersect is not None:
                 intersect = (int(intersect[0]),int(intersect[1]))
                 if intersect[0] > 14 or intersect[1] > 14:
-                    raise Exception('intersection out of grid')
+                    raise Exception(f'Intersection point out of bounds {intersect}')
                 if maximize and self.grid[intersect[0], intersect[1]] == 1:
                     hooks.append((t0,t1))
                 elif not maximize and self.grid[intersect[0], intersect[1]] == 2:
@@ -99,9 +99,8 @@ class BoardState:
         self._update_boards((c,r), '0')
         self._update_threats((c,r))
 
-
-    def get_all_threats(self, black : bool) -> tuple:         
-        raise NotImplementedError()
+    # def get_all_threats(self, black : bool) -> tuple:         
+    #     raise NotImplementedError()
 
     def _get_repr_from_angle(self, angle : int) -> str:
         if angle == 0:
@@ -156,28 +155,21 @@ class BoardState:
     def _get_threats_in_repr(self, dst : dict,  repr : str, black : bool, offset : int = 0, angle : int = 0):
         rgx = BLACK_SEQUENCE_RGX if black else WHITE_SEQUENCE_RGX
         t_info = B_THREAT_DATA if black else W_THREAT_DATA
-        #added = set()
         for match in re.finditer(rgx, repr):
             group = match.group()
             l = len(group)            
 
             if group in t_info:
                 info = t_info[group]                
-                span = (match.span()[0] + offset, match.span()[1] + offset)
+                span = (match.span()[0] + offset, match.span()[1] - 1 + offset)
                 threat = Threat(group,info,span,angle)
                 t_class = _get_threat_class_from_info(info)
                 if t_class == 'winning':
                     dst['winning'].add(threat)
-                    #added.add((threat, 'winning'))
                 elif t_class == 'forcing':
                     dst['forcing'].add(threat)
-                    #added.add((threat, 'forcing'))
                 else:
                     dst['nforcing'].add(threat)    
-                    #added.add((threat, 'nforcing'))
-        # for add in added:
-        #     check_correctness(add[0], add[1])
-        #return added
 
     def _get_threats(self, black : bool):
         threats = self.b_threats if black else self.w_threats
@@ -230,8 +222,7 @@ class BoardState:
         else:
             offset = r + self.size - 1 - c
             extr = ((self.size - 1 - offset, 0),(self.size - 1, offset))
-
-        #print('extr: ', extr)                
+               
         bounds = (cr_to_index315(*extr[0], self.size), cr_to_index315(*extr[1], self.size))
         return bounds, self.board_315[bounds[0] : bounds[1] + 1]    
 

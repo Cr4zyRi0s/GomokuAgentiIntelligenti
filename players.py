@@ -1,5 +1,6 @@
 from operator import xor
 import random
+from shutil import ExecError
 from threats import B_THREAT_DATA, W_THREAT_DEP, B_THREAT_DEP, _get_threat_class_from_info
 from time import time
 from utils import is_valid_move
@@ -25,13 +26,14 @@ def place_random_stones(board, n_stones : int) -> list:
         positions.append(pos)
     return positions
 
-def place_stone_not_aligned(board_size : int, other_stones : list):
+def place_stone_not_aligned(board_size : int, other_stones : list, square_size : int = 5):
     accept = False
+    padding = (board_size - square_size) // 2
 
     while not accept:
         accept = True
-        rand_pos = (random.randint(2,board_size - 3), 
-                    random.randint(2,board_size - 3))
+        rand_pos = (random.randint(padding,board_size - padding), 
+                    random.randint(padding,board_size - padding))
         off45 = rand_pos[0] - rand_pos[1]
         off315 = rand_pos[0] + rand_pos[1] - board_size + 1
         for s in other_stones: 
@@ -84,7 +86,9 @@ class AIPlayer(Player):
                 search_depth : int = DEFAULT_SEARCH_DEPTH,
                 seed : int = None,
                 t_weights : dict = None,
-                version : int = 1):
+                version : int = 1,
+                opening_version : int = 1
+                ):
 
         super().__init__()
         if seed is None:
@@ -94,6 +98,7 @@ class AIPlayer(Player):
         self.name = self.__class__.__name__
         self.search_depth = search_depth
         self.version = version
+        self.opening_version = opening_version
         self.agg_sdata_coll = {}
 
         if t_weights is None:
@@ -114,44 +119,74 @@ class AIPlayer(Player):
         # w_stone_placements = opening[1]
 
         #place the first black stone at random
-        b_stone_placements = []
-        b_stone_placements.append((
-        random.randint(2,self.game.size - 3), 
-        random.randint(2,self.game.size - 3)))
-        #then choose to place a second stone so that it does not share a line with the first one
-        b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
-        #same goes for the white stone
-        w_stone_placements = [place_stone_not_aligned(self.game.size, b_stone_placements)]
+        if self.opening_version == 1:
+            b_stone_placements = []
+            b_stone_placements.append((
+            random.randint(2,self.game.size - 3), 
+            random.randint(2,self.game.size - 3)))
+            #then choose to place a second stone so that it does not share a line with the first one
+            b_stone_placements.append(place_stone_not_aligned(self.game.size, b_stone_placements))
+            #same goes for the white stone
+            w_stone_placements = [place_stone_not_aligned(self.game.size, b_stone_placements)]
 
-        self.game.swap2_first_placement(b_stone_placements, w_stone_placements)
+            self.game.swap2_first_placement(b_stone_placements, w_stone_placements)
+        elif self.opening_version == 2:
+            b_stone_placements = list()
+            b_stone_placements.append((
+            random.randint(5,self.game.size - 5), 
+            random.randint(5,self.game.size - 5)))
+
+            wstone =list(b_stone_placements[0])
+            randx=random.randint(-1,1)
+            randy = random.choice([-1,1]) if randx == 0 else random.randint(-1,1)
+            wstone[0] += randx
+            wstone[1] += randy
+            wstone = tuple(wstone)
+            w_stone_placements = [wstone]            
+
+            b_stone_placements.append(
+                place_stone_not_aligned(
+                    self.game.board_state.grid.shape[0],
+                    b_stone_placements,
+                    square_size=5
+                    )
+                )
+            self.game.swap2_first_placement(b_stone_placements,w_stone_placements)
+        else:
+            raise Exception(f"Invalid Opening version number({self.opening_version})")
 
     def swap2_accept_or_place(self):
         bstate = self.game.board_state
-        bl_nft = bstate.b_threats['nforcing'] 
-
-        for t in bl_nft:
-            if t.info['type'][0] > 1:
-                break
-        else:
-            self.game.swap2_accept_or_place(self,'white')           
-            return
+        #bl_nft = bstate.b_threats['nforcing'] 
+        # for t in bl_nft:
+        #     if t.info['type'][0] > 1:
+        #         break
+        # else:
+        #     self.game.swap2_accept_or_place(self,'white')           
+        #     return
         
-        self.game.swap2_accept_or_place(self,'place')           
-        # move=gomoku_get_best_move(bstate,False,self.t_weights,self.search_depth,self.version)
-        # bstate.make_move(move,False)
-        # eval=gomoku_state_static_eval(bstate,t_weights=self.t_weights,version=self.version)
-        # bstate.unmake_last_move()        
+        # self.game.swap2_accept_or_place(self,'place')        
+        move,_=gomoku_get_best_move(
+            state=bstate,
+            maximize=False,
+            t_weights=self.t_weights,
+            search_depth=self.search_depth,
+            version=self.version)            
+        bstate.make_move(move,False)
+        eval=gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
+        bstate.unmake_last_move()        
     
-        # if abs(eval) <= 0:
-        #     # for bt in bstate.b_threats['nforcing']: 
-        #     #     for next_bt in B_THREAT_DEP[bt.group]:
-        #     #         next_bt_info = B_THREAT_DATA[next_bt]
-        #     #         if _get_threat_class_from_info(next_bt_info) == 'forcing':
-        #     #             self.game.swap2_accept_or_place('black')
-        #     #             return
-        #     self.game.swap2_accept_or_place('white')        
-        # else:             
-        #     self.game.swap2_accept_or_place(self,'black')  
+        if abs(eval) <= 0:
+            # for bt in bstate.b_threats['nforcing']: 
+            #     for next_bt in B_THREAT_DEP[bt.group]:
+            #         next_bt_info = B_THREAT_DATA[next_bt]
+            #         if _get_threat_class_from_info(next_bt_info) == 'forcing':
+            #             self.game.swap2_accept_or_place('black')
+            #             return
+            self.game.swap2_accept_or_place(self, 'white')        
+        else:             
+            self.game.swap2_accept_or_place(self,'black')  
+
                 
     def swap2_second_place_stones(self):     
         bstate = self.game.board_state        
@@ -170,26 +205,24 @@ class AIPlayer(Player):
             self.game.swap2_select_color(self, 'black')
             return
 
-        state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
-        if state_score > 0:
-            best_white_move,_ = gomoku_get_best_move(
-                state=bstate,
-                maximize=False,
-                t_weights=self.t_weights,
-                search_depth=self.search_depth,                
-                version=self.version
-                )
-            bstate.make_move(best_white_move, False)
-            new_state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
-            bstate.unmake_last_move()
-            if new_state_score <= 0:
-                self.game.swap2_select_color(self,'white')
-                if not self.game.turn(self, best_white_move):
-                    raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
-            else:
-                self.game.swap2_select_color(self,'black')
+        # state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
+        # if state_score > 0:
+        best_white_move,_ = gomoku_get_best_move(
+            state=bstate,
+            maximize=False,
+            t_weights=self.t_weights,
+            search_depth=self.search_depth,                
+            version=self.version
+            )
+        bstate.make_move(best_white_move, False)
+        new_state_score = gomoku_state_static_eval(state=bstate,t_weights=self.t_weights,version=self.version)
+        bstate.unmake_last_move()
+        if new_state_score <= 0:
+            self.game.swap2_select_color(self,'white')
+            if not self.game.turn(self, best_white_move):
+                raise Exception('%s player was supposed to play but couldn\'t.' % (self.color))
         else:
-            self.game.swap2_select_color('white')
+            self.game.swap2_select_color(self,'black')
 
     def get_definition(self) -> dict:
         return {
@@ -288,7 +321,6 @@ class HumanPlayer(Player):
         return {}
 
     def on_click_grid(self,x,y,c,r):
-        print('on click grid')
         if self.swap2_state['first_pl']:
             if self._stone_placement(2,1,(c,r)):
                 self.swap2_state['first_pl'] = False

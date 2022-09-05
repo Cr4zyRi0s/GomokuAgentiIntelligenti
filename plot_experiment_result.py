@@ -116,10 +116,10 @@ def create_experiment_imgs(experiment_path, experiment_name):
         plt.ylabel("Time")
         plt.xlabel("#move")
 
-        #plt.show()
 
         img = matchn+'_TimeImg.png'
         fig.savefig(join(newPath,'TimeImg',img))
+        plt.close('all')
 
 def create_winner_graph(experiment_path, experiment_name):
     plt.rcParams['axes.facecolor'] = '#FFFFFF'
@@ -131,6 +131,7 @@ def create_winner_graph(experiment_path, experiment_name):
 
     full_experiment_path = join(experiment_path,experiment_name)
 
+    experiment_data = {}
     match_list = os.listdir(full_experiment_path)
     match_types_set = set([' '.join(mname.split('_')[1:5]) for mname in match_list])
 
@@ -147,6 +148,7 @@ def create_winner_graph(experiment_path, experiment_name):
         for mname in match_names:
             with open(os.path.join(full_experiment_path,mname),'r') as mjson:
                 mdata = json.load(mjson)
+                experiment_data[mname] = mdata
                 win = mdata['winner'].lower()
                 nmoves = len(mdata['moves'])
                 if win == 'black':
@@ -173,15 +175,12 @@ def create_winner_graph(experiment_path, experiment_name):
 
         ax.bar_label(bars,win_data)
 
-
-        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_WinStats.png"))
+        fig.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_WinStats.png"))
 
         #NUMBER OF MOVES TO WIN
         fig, ax = plt.subplots(figsize=(6, 6), sharey=True)
         move_data = [moves_stats['black'],moves_stats['white']]
-        bp = ax.boxplot(move_data, labels=['Black','White'], showfliers=False, patch_artist=True)
-        ax.set_ylabel('Number of Moves to Win')
-        ax.set_xlabel('Color')
+        bp = ax.boxplot(move_data, labels=['Black','White'], showfliers=False, patch_artist=True)    
 
         #Purple and Blue
         colors = [(176 / 255, 51 / 255, 170 / 255, 1),(44 / 255, 72 / 255, 184 / 255, 1)]
@@ -192,7 +191,45 @@ def create_winner_graph(experiment_path, experiment_name):
         ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Number of Moves to Win")
 
         fig.subplots_adjust(hspace=0.4)
-        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_NMoves.png"))
+        fig.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_NMoves.png"))
+
+
+    player_types = [mtype.split(' ')[0] for mtype in match_types_set]
+    player_types.extend([mtype.split(' ')[2] for mtype in match_types_set])
+    player_types = list(set(player_types))
+    player_types.sort()
+    black_wins = {ptype : 0 for ptype in player_types}
+    white_wins = {ptype : 0 for ptype in player_types}        
+
+    for mdata in experiment_data.values():
+        winner_color = mdata['winner']
+        player_colors = mdata['swap2_data']['select_color']
+        ptype = player_colors[winner_color].split('_')[0]
+        if winner_color == 'black':
+            black_wins[ptype] += 1
+        elif winner_color == 'white':
+            white_wins[ptype] += 1
+
+
+    x = np.arange(len(player_types))  # the label locations
+    width = 0.35  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width/2, [black_wins[ptype] for ptype in player_types], width, label='Black Wins')
+    rects2 = ax.bar(x + width/2, [white_wins[ptype] for ptype in player_types], width, label='White Wins')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.        
+    ax.set_title(f"{' '.join(experiment_name.split('-')).upper()} Player Wins")
+    ax.set_xticks(x, player_types)
+    ax.legend()
+
+    ax.bar_label(rects1, padding=3)
+    ax.bar_label(rects2, padding=3)
+
+    fig.tight_layout()
+    fig.savefig(os.path.join(newPath,f"{experiment_name}_PWins.png"))
+
+    plt.close('all')      
 
 
 def create_search_data_graph(experiment_path, experiment_name):
@@ -234,37 +271,19 @@ def create_search_data_graph(experiment_path, experiment_name):
         ax.set_title(f"{experiment_name.replace('-',' ').upper()} Minimax Search Data")
 
         fig.subplots_adjust(hspace=0.4)
-        plt.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_SearchData.png"))
+        fig.savefig(os.path.join(newPath,f"{experiment_name}_{match_type.replace(' ', '')}_SearchData.png"))
+        plt.close('all')
 
 if __name__ == '__main__':
     experiment_path = 'experiments'
-    experiment_name = 'experiment-opening-v2'
-    # SMALL_SIZE = 10
-    # MEDIUM_SIZE = 14
+    experiment_name = 'experiment-v1-vs-v2'
+    SMALL_SIZE = 10
+    MEDIUM_SIZE = 14
 
-    # plt.rc('axes', labelsize=MEDIUM_SIZE)
-    # plt.rc('xtick', labelsize=MEDIUM_SIZE)
-    # plt.rc('ytick', labelsize=MEDIUM_SIZE)
-
+    plt.rc('axes', labelsize=MEDIUM_SIZE)
+    plt.rc('xtick', labelsize=MEDIUM_SIZE)
+    plt.rc('ytick', labelsize=MEDIUM_SIZE)
 
     create_experiment_imgs(experiment_path,experiment_name)
     create_winner_graph(experiment_path,experiment_name)
     create_search_data_graph(experiment_path,experiment_name)
-
-
-# for i in range(np.size(ax_x_bl)):
-#     plt.annotate(time_bl[i],
-#                         xy=(ax_x_bl[i], time_bl[i]),
-#                         xytext=(ax_x_bl[i]+0.1, time_bl[i]),
-#                         color= "black",
-#                         size = 10
-#                         )
-
-
-# for i in range(np.size(ax_x_wh)):
-#     plt.annotate(time_wh[i],
-#                         xy=(ax_x_wh[i], time_wh[i]),
-#                         xytext=(ax_x_wh[i]+0.07, time_wh[i]),
-#                         color= "white",
-#                         size = 10
-#                         )

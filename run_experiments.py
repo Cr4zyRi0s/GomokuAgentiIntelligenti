@@ -58,6 +58,29 @@ ai_sd4_v2 = {
     }
 }
 
+ai_sd2_ov2 = {
+    'class' : 'ai',
+    'args':{
+    'search_depth' : 2,
+    'opening_version' : 2
+    }
+}
+ai_sd3_ov2 = {
+    'class' : 'ai',
+    'args':{
+    'search_depth' : 3,
+    'opening_version' : 2
+    }
+}
+ai_sd4_ov2 = {
+    'class' : 'ai',
+    'args':{
+    'search_depth' : 4,
+    'opening_version' : 2
+    }
+}
+
+
 ai_sd2 = {
     'class' : 'ai',
     'args':{
@@ -112,13 +135,43 @@ def run_depth_variation():
 
 def run_opening_v2():
     players_defs = {
-        'sd4v2ov2' : ai_sd4_v2_ov2        
+        'sd2v2ov2' : ai_sd2_v2_ov2,
+        'sd3v2ov2' : ai_sd3_v2_ov2,
+        'sd4v2ov2' : ai_sd4_v2_ov2
     }
+    match_list = [
+        ('sd2v2ov2','sd2v2ov2'),    
+        ('sd3v2ov2','sd3v2ov2'),    
+        ('sd4v2ov2','sd4v2ov2')
+    ]
 
     start_time = time()
-    experiment =  Experiment('opening-v2', player_defs=players_defs, repetitions=50)
+    experiment =  Experiment('opening-v2', player_defs=players_defs, repetitions=50,match_list=match_list)
+    experiment.run()
+    print('Experiment took %f to run.' % (round(time() - start_time,3)))    
+
+def run_v1_vs_v2():
+    players_defs = {
+        'sd2v2ov2' : ai_sd2_v2_ov2,
+        'sd3v2ov2' : ai_sd3_v2_ov2,
+        'sd4v2ov2' : ai_sd4_v2_ov2,
+        'sd2ov2' : ai_sd2_ov2,
+        'sd3ov2' : ai_sd3_ov2,
+        'sd4ov2' : ai_sd4_ov2
+    }
+    match_list = [
+        ('sd2ov2','sd2v2ov2'),
+        ('sd2v2ov2','sd2ov2'),    
+        ('sd3ov2','sd3v2ov2'),
+        ('sd3v2ov2','sd3ov2'),     
+        ('sd4ov2','sd4v2ov2'),
+        ('sd4v2ov2','sd4ov2')
+    ]
+
+    start_time = time()
+    experiment =  Experiment('v1-vs-v2', player_defs=players_defs, repetitions=25,match_list=match_list)
     experiment.run()
     print('Experiment took %f to run.' % (round(time() - start_time,3)))    
 
 if __name__ == '__main__':
-    run_depth_variation()
+    run_v1_vs_v2()
